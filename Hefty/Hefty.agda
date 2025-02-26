@@ -119,6 +119,10 @@ fold g alg (impure op k) = alg op λ x -> fold g alg (k x)
 _>>=_ : Free Eff A -> (A -> Free Eff B) -> Free Eff B
 m >>= g = fold g impure m
 
+-- How does it work?
+_>>_ : Free Eff A → Free Eff B → Free Eff B
+m1 >> m2 = m1 >>= λ _ → m2
+
 
 --How does it use?
 data EffectInRow  : Effect -> Effect -> Effect -> Set₁ where
@@ -128,7 +132,7 @@ data EffectInRow  : Effect -> Effect -> Effect -> Set₁ where
             -> EffectInRow E Here There
             -> EffectInRow (coProduct Next E) Here (coProduct Next There)
 
-
+--I need to rename this
 inj-insert-left : {E Here There : Effect} {{ w : EffectInRow E Here There }}  -> Op Here -> Op E
 inj-insert-left {{ insert }} op = injl op
 inj-insert-left {{ sift w }} op = injr (inj-insert-left {{w}} op)
@@ -139,6 +143,7 @@ inj-insert-right {{ w = sift w }} (injl next) = injl next
 inj-insert-right {{ w = sift w }} (injr there) = injr (inj-insert-right {{w}} there)
 
 
+--I need to rename this
 proj-ret-left :
         {E Here There : Effect}
         -> {{ w : EffectInRow E Here There }}
@@ -148,13 +153,36 @@ proj-ret-left :
 proj-ret-left {{ insert }} x = x
 proj-ret-left {{ sift w }} x = proj-ret-left {{w}} x
 
+
+--I need to rename this
 proj-ret-right :
         {E Here There : Effect}
         -> {{ w : EffectInRow E Here There }}
         -> {op : Op There}
         -> Ret E (inj-insert-right op)
         -> Ret There op
-
 proj-ret-right {{ insert }} x =  x
 proj-ret-right ⦃ w = sift w ⦄ {injl next } x = x
 proj-ret-right ⦃ w = sift w ⦄ {injr op} x = proj-ret-right {{w}} x
+
+`out : {E There : Effect}
+     -> {{ EffectInRow E Output There }}
+     -> String
+     -> Free E ⊤
+`out {{ w }} str = impure (inj-insert-left (out str)) λ x -> pure ((proj-ret-left {{w}} x))
+
+--Rethink this
+`throw : {E There : Effect}
+     -> {{ EffectInRow E Throw There }}
+     -> Free E A
+`throw {{ w }} = impure (inj-insert-left throw ) (λ x -> ⊥-elim (proj-ret-left {{w}} x))
+
+
+hello-throw1 : {E There1 There2 : Effect} {A : Set}
+             -> {{EffectInRow E Output There1}}
+             -> {{EffectInRow E Throw There2}}
+             -> Free E A
+hello-throw1 = do `out "Hello";
+                    `out " ";
+                    `out "world";
+                    `throw
