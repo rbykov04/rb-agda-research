@@ -1,4 +1,5 @@
 {-# OPTIONS --exact-split #-}
+{-# OPTIONS --overlapping-instances #-}
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
@@ -339,13 +340,10 @@ hello-throw1 = do `out "Hello";
                     `out "world";
                     `throw
 
-
 record Handler (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
     field ret : A -> P -> Free Continue B
           hdl : Alg E (P -> Free Continue B)
 open Handler
-
-
 
 -- how does it work???
 -- I understand (maybe) what it doest. but how??
@@ -362,3 +360,88 @@ givenHandle {A} {B} {P} {E} {Here} {There} h eff =
     func  (injl op) k p = hdl h op k p
     func (injr op) k p = impure op (λ x → k x p)
 
+------------------------------------------------------------------------
+-- Definition of dependent products
+
+open import Agda.Builtin.Sigma public
+  renaming (fst to proj₁; snd to proj₂)
+  hiding (module Σ)
+
+module Σ = Agda.Builtin.Sigma.Σ
+  renaming (fst to proj₁; snd to proj₂)
+
+------------------------------------------------------------------------
+-- Existential quantifiers
+
+∃ : ∀ {A : Set a} → (A → Set b) → Set (a ⊔ b)
+∃ = Σ _
+
+∃₂ : ∀ {A : Set a} {B : A → Set b}
+     (C : (x : A) → B x → Set c) → Set (a ⊔ b ⊔ c)
+∃₂ C = ∃ λ a → ∃ λ b → C a b
+
+------------------------------------------------------------------------
+-- Syntaxes
+
+-- The syntax declaration below is attached to Σ-syntax, to make it
+-- easy to import Σ without the special syntax.
+
+infix 2 Σ-syntax
+
+Σ-syntax : (A : Set a) → (A → Set b) → Set (a ⊔ b)
+Σ-syntax = Σ
+
+syntax Σ-syntax A (λ x → B) = Σ[ x ∈ A ] B
+
+infix 2 ∃-syntax
+
+∃-syntax : ∀ {A : Set a} → (A → Set b) → Set (a ⊔ b)
+∃-syntax = ∃
+
+syntax ∃-syntax (λ x → B) = ∃[ x ] B
+
+------------------------------------------------------------------------
+-- Definition of non-dependent products
+
+infixr 4 _,′_
+infixr 2 _×_
+
+_×_ : ∀ (A : Set a) (B : Set b) → Set (a ⊔ b)
+A × B = Σ[ x ∈ A ] B
+
+_,′_ : A → B → A × B
+_,′_ = _,_
+
+
+_++_ : String -> String -> String
+a ++ b = primStringAppend a b
+
+hOut : Handler A Output ⊤ ( A × String ) Eff
+ret hOut x _ = pure (x , "")
+hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
+
+Nil : Effect
+Op  Nil = ⊥
+Ret Nil = ⊥-elim
+
+un : Free Nil A -> A
+un (pure x) = x
+
+instance
+  insert1 :
+            {Here There : Effect}
+            -> EffectStorage (coProduct Here There) Here There
+  insert1 = insert
+
+  sift1 :
+        {E Here Next There : Effect}
+        -> {{EffectStorage E Here There}}
+        -> (EffectStorage (coProduct Next E) Here (coProduct Next There))
+  sift1 ⦃ w ⦄ = sift w
+
+hello-program : Free (coProduct Output Nil) ⊤
+hello-program = do `out "Hello"; `out " "; `out "world!"
+
+test-hello :
+    un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!")
+test-hello = refl
