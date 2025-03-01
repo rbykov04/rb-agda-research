@@ -204,6 +204,20 @@ data EffectStorage  : Effect -> Effect -> Effect -> Set₁ where
             -> EffectStorage E Here There
             -> EffectStorage (coProduct Next E) Here (coProduct Next There)
 
+instance
+  insert1 :
+            {Here There : Effect}
+            -> EffectStorage (coProduct Here There) Here There
+  insert1 = insert
+
+  sift1 :
+        {E Here Next There : Effect}
+        -> {{EffectStorage E Here There}}
+        -> (EffectStorage (coProduct Next E) Here (coProduct Next There))
+  sift1 ⦃ w ⦄ = sift w
+
+
+
 --I need to rename this
 inj-insert-left : {E Here There : Effect}
                   {{ w : EffectStorage E Here There }}
@@ -379,24 +393,14 @@ hOut : Handler A Output ⊤ ( A × String ) Eff
 ret hOut x _ = pure (x , "")
 hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
 
+
+
 Nil : Effect
 Op  Nil = ⊥
 Ret Nil = ⊥-elim
 
 un : Free Nil A -> A
 un (pure x) = x
-
-instance
-  insert1 :
-            {Here There : Effect}
-            -> EffectStorage (coProduct Here There) Here There
-  insert1 = insert
-
-  sift1 :
-        {E Here Next There : Effect}
-        -> {{EffectStorage E Here There}}
-        -> (EffectStorage (coProduct Next E) Here (coProduct Next There))
-  sift1 ⦃ w ⦄ = sift w
 
 hello-program : Free (coProduct Output Nil) ⊤
 hello-program = do `out "Hello"; `out " "; `out "world!\n"
@@ -406,13 +410,32 @@ test-hello :
 test-hello = refl
 
 
-postulate putStrLn : String → IO ⊤
+infixl 1 _>>>=_
+postulate
+    putStr : String → IO ⊤
+    return : A → IO A
+    _>>>=_  : IO A → (A → IO B) → IO B
+
+
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# FOREIGN GHC import qualified System.IO as SIO #-}
-{-# COMPILE GHC putStrLn = (SIO.hPutStrLn SIO.stderr) . T.unpack #-}
+{-# COMPILE GHC putStr = (SIO.hPutStr SIO.stderr) . T.unpack #-}
+{-# COMPILE GHC return = \_ _ -> return    #-}
+{-# COMPILE GHC _>>>=_  = \_ _ _ _ -> (>>=) #-}
 
+_>>>_ : IO A → IO B → IO B
+a >>> b = a >>>= λ _ → b
+
+
+hOutIO : Handler A Output ⊤ ( A × IO ⊤ ) Eff
+ret hOutIO x _ = pure (x , return tt)
+hdl hOutIO (out s) k p = do (x , s') <- k tt p; pure (x , (putStr s >>> s'))
+
+
+program : Free (coProduct Output Nil) ⊤
+program = do `out "Hello";
+              `out " ";
+              `out "world!\n"
 
 main : IO ⊤
-main = let
-    res = un ((givenHandle hOut hello-program) tt)
-    in putStrLn (snd res)
+main = snd (un ((givenHandle hOutIO program) tt))
