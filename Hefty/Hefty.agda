@@ -1,10 +1,15 @@
 {-# OPTIONS --exact-split #-}
 {-# OPTIONS --overlapping-instances #-}
 
+
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
+open import Agda.Builtin.IO
+open import Agda.Builtin.Unit
+open import Agda.Builtin.String
+open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
 private
@@ -67,7 +72,14 @@ sym : ∀ {A : Set a} {x y : A}
     -----
   → y ≡ x
 sym refl = refl
+
 ---
+-- also know as ( , )
+infixr 2 _×_
+_×_ : ∀ (A : Set a) (B : Set b) → Set (a ⊔ b)
+_×_ {a} {b} A B = Σ A (λ x -> B)
+
+
 -- also known as Either
 data Sum (A : Set) (B : Set) : Set where
   injl : (x : A) → Sum A B
@@ -360,59 +372,6 @@ givenHandle {A} {B} {P} {E} {Here} {There} h eff =
     func  (injl op) k p = hdl h op k p
     func (injr op) k p = impure op (λ x → k x p)
 
-------------------------------------------------------------------------
--- Definition of dependent products
-
-open import Agda.Builtin.Sigma public
-  renaming (fst to proj₁; snd to proj₂)
-  hiding (module Σ)
-
-module Σ = Agda.Builtin.Sigma.Σ
-  renaming (fst to proj₁; snd to proj₂)
-
-------------------------------------------------------------------------
--- Existential quantifiers
-
-∃ : ∀ {A : Set a} → (A → Set b) → Set (a ⊔ b)
-∃ = Σ _
-
-∃₂ : ∀ {A : Set a} {B : A → Set b}
-     (C : (x : A) → B x → Set c) → Set (a ⊔ b ⊔ c)
-∃₂ C = ∃ λ a → ∃ λ b → C a b
-
-------------------------------------------------------------------------
--- Syntaxes
-
--- The syntax declaration below is attached to Σ-syntax, to make it
--- easy to import Σ without the special syntax.
-
-infix 2 Σ-syntax
-
-Σ-syntax : (A : Set a) → (A → Set b) → Set (a ⊔ b)
-Σ-syntax = Σ
-
-syntax Σ-syntax A (λ x → B) = Σ[ x ∈ A ] B
-
-infix 2 ∃-syntax
-
-∃-syntax : ∀ {A : Set a} → (A → Set b) → Set (a ⊔ b)
-∃-syntax = ∃
-
-syntax ∃-syntax (λ x → B) = ∃[ x ] B
-
-------------------------------------------------------------------------
--- Definition of non-dependent products
-
-infixr 4 _,′_
-infixr 2 _×_
-
-_×_ : ∀ (A : Set a) (B : Set b) → Set (a ⊔ b)
-A × B = Σ[ x ∈ A ] B
-
-_,′_ : A → B → A × B
-_,′_ = _,_
-
-
 _++_ : String -> String -> String
 a ++ b = primStringAppend a b
 
@@ -440,8 +399,20 @@ instance
   sift1 ⦃ w ⦄ = sift w
 
 hello-program : Free (coProduct Output Nil) ⊤
-hello-program = do `out "Hello"; `out " "; `out "world!"
+hello-program = do `out "Hello"; `out " "; `out "world!\n"
 
 test-hello :
-    un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!")
+    un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!\n")
 test-hello = refl
+
+
+postulate putStrLn : String → IO ⊤
+{-# FOREIGN GHC import qualified Data.Text as T #-}
+{-# FOREIGN GHC import qualified System.IO as SIO #-}
+{-# COMPILE GHC putStrLn = (SIO.hPutStrLn SIO.stderr) . T.unpack #-}
+
+
+main : IO ⊤
+main = let
+    res = un ((givenHandle hOut hello-program) tt)
+    in putStrLn (snd res)
