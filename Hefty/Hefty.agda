@@ -24,20 +24,20 @@ _$_ : ∀ {A : Set a} {B : A → Set b} →
 f $ x = f x
 {-# INLINE _$_ #-}
 
-cong : forall {A B} (f : A -> B) {x y : A}
+cong : (f : A -> B) {x y : A}
   -> x ≡ y
     ---------
   -> f x ≡ f y
 cong f refl  =  refl
 
-trans : ∀ {A } {x y z : A}
+trans :  {x y z : A}
   → x ≡ y
   → y ≡ z
     -----
   → x ≡ z
 trans refl refl  =  refl
 
-subst : ∀ {A } {x y : A} (P : A → Set)
+subst :  {x y : A} (P : A → Set)
   → x ≡ y
     ---------
   → P x → P y
@@ -361,3 +361,4 @@ givenHandle {A} {B} {P} {E} {Here} {There} h eff =
     func : Alg (coProduct Here There) (P -> Free There B)
     func  (injl op) k p = hdl h op k p
     func (injr op) k p = impure op (λ x → k x p)
+
