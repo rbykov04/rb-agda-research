@@ -409,6 +409,50 @@ test-hello :
     un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!\n")
 test-hello = refl
 
+-- State Effect
+data StateOp : Set where
+    get : StateOp
+    put : Nat -> StateOp
+
+State : Effect
+Op  State = StateOp
+Ret State get = Nat
+Ret State (put x) = ⊤
+
+hSt : Handler A State Nat ( A × Nat ) Eff
+ret hSt x s = pure (x , s)
+hdl hSt get k n = k n n
+hdl hSt (put m) k _ = k tt m
+
+
+`put :
+      {E There : Effect}
+     -> {{ EffectStorage E State There }}
+     -> Nat
+     -> Free E ⊤
+`put {{ w }} n = impure (inj-insert-left (put n) ) (λ x -> pure (proj-ret-left {{w}} x))
+
+`get :
+      {E There : Effect}
+     -> {{ EffectStorage E State There }}
+     -> Free E Nat
+`get {{ w }}  = impure (inj-insert-left get ) (λ x -> pure (proj-ret-left {{w}} x))
+
+`incr :
+      {E There : Effect}
+     -> {{ EffectStorage E State There }}
+     -> Free E ⊤
+`incr  = do n <- `get; `put (1 + n)
+
+test-incr :
+    un ((givenHandle hSt `incr ) 0) ≡ (tt , 1)
+test-incr = refl
+
+
+-- State Effect End
+
+
+
 
 infixl 1 _>>>=_
 postulate
@@ -425,7 +469,6 @@ postulate
 
 _>>>_ : IO A → IO B → IO B
 a >>> b = a >>>= λ _ → b
-
 
 hOutIO : Handler A Output ⊤ ( A × IO ⊤ ) Eff
 ret hOutIO x _ = pure (x , return tt)
