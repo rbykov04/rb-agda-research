@@ -2,6 +2,7 @@ module Hefty where
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
+open import Agda.Builtin.List
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
 open import Agda.Builtin.IO
@@ -63,11 +64,79 @@ _>>=_ : {H : EffectH} -> Hefty H A -> (A -> Hefty H B) -> Hefty H B
 pure x        >>= g = g x
 impure op f k >>= g = impure op f \ x → k x >>= g
 
+{-
+--Maybe:
+
+data Storage (X : Set₁) (_OR_ : X -> X -> X) : X -> X -> X -> Set₁ where
+    insert  : {x0 x' : X}      -> Storage X _OR_ (x0 OR x') x0 x'
+    sift : {x x0 x1 x' : X} -> Storage X _OR_ x x0 x' -> Storage X _OR_ (x1 OR x) x0 (x1 OR x')
+
+EffectHStorage : EffectH -> EffectH -> EffectH -> Set₁
+EffectHStorage = Storage EffectH (_+E+_)
+-}
+
+
 data EffectHStorage : EffectH -> EffectH -> EffectH → Set₁ where
   insert  : {H0 H' : EffectH} -> EffectHStorage (H0 +E+ H') H0 H'
   sift    : {H H0 H1 H' : EffectH}
           -> EffectHStorage H H0 H'
           -> EffectHStorage (H1 +E+ H) H0 (H1 +E+ H')
+
+
+data ListSt : List Nat -> Nat -> List Nat  -> Set where
+    here  : {x0 : Nat} {x' : List Nat}      -> ListSt (x0 ∷ x') x0 x'
+    there : {x0 x1 : Nat} {x x' : List Nat} -> ListSt x x0 x' -> ListSt (x1 ∷ x) x0 (x1 ∷ x')
+
+ll : ListSt (0 ∷ []) 0 []
+ll = here
+
+l2 : ListSt (zero ∷ zero ∷ []) 0 (zero ∷ [])
+l2 = there here
+
+l3 : ListSt (zero ∷ zero ∷ 5 ∷ []) 5 (zero ∷ zero ∷ [])
+l3 = there (there here)
+
+l4 : ListSt (zero ∷ zero ∷ zero ∷ 5 ∷ []) 5 (zero ∷ zero ∷ zero ∷ [])
+l4 = there (there (there here))
+
+l5 : ListSt (60 ∷ 10 ∷ 20 ∷ 5 ∷ []) 5 (60 ∷ 10 ∷ 20 ∷ [])
+l5 = there (there (there here))
+
+
+
+Lift : Effect -> EffectH
+OpH   (Lift x)   = Op x
+ForkH (Lift x) _ = Nil
+RetH  (Lift x)   = Ret x
+
+NilH : EffectH
+NilH = Lift Nil
+
+OutH : EffectH
+OutH = Lift Output
+
+storage1 : EffectHStorage (Lift Nil +E+ Lift Nil) NilH NilH
+storage1 = insert
+
+storage2 : EffectHStorage (OutH +E+ (OutH +E+ NilH)) OutH ((OutH +E+ NilH))
+storage2 = sift insert
+
+storage3 : EffectHStorage (NilH +E+ (OutH +E+ NilH))
+                                     OutH
+                          (NilH +E+ NilH)
+storage3 = sift insert
+
+storage4 : EffectHStorage  (OutH +E+ (NilH +E+ (OutH +E+ NilH)))
+                                                OutH
+                           (OutH +E+ (NilH +E+ NilH))
+storage4 = sift (sift insert)
+
+
+storage5 : EffectHStorage  (NilH +E+ (OutH +E+ (NilH +E+ (OutH +E+ NilH))))
+                                                OutH
+                           (NilH +E+ (OutH +E+ (NilH +E+ NilH)))
+storage5 = sift (sift (sift insert))
+
 
 instance
   insert-h :
@@ -108,10 +177,7 @@ injl-ret-eq-h ⦃ w = sift w ⦄ op = injl-ret-eq-h {{w}} op
 
 
 
-Lift : Effect -> EffectH
-OpH   (Lift x)   = Op x
-ForkH (Lift x) _ = Nil
-RetH  (Lift x)   = Ret x
+
 {-
 up : {E : Effect}
      -> {H H' : EffectH}
