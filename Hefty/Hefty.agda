@@ -104,40 +104,6 @@ l5 = there (there (there here))
 
 
 
-Lift : Effect -> EffectH
-OpH   (Lift x)   = Op x
-ForkH (Lift x) _ = Nil
-RetH  (Lift x)   = Ret x
-
-NilH : EffectH
-NilH = Lift Nil
-
-OutH : EffectH
-OutH = Lift Output
-
-storage1 : EffectHStorage (Lift Nil +E+ Lift Nil) NilH NilH
-storage1 = insert
-
-storage2 : EffectHStorage (OutH +E+ (OutH +E+ NilH)) OutH ((OutH +E+ NilH))
-storage2 = sift insert
-
-storage3 : EffectHStorage (NilH +E+ (OutH +E+ NilH))
-                                     OutH
-                          (NilH +E+ NilH)
-storage3 = sift insert
-
-storage4 : EffectHStorage  (OutH +E+ (NilH +E+ (OutH +E+ NilH)))
-                                                OutH
-                           (OutH +E+ (NilH +E+ NilH))
-storage4 = sift (sift insert)
-
-
-storage5 : EffectHStorage  (NilH +E+ (OutH +E+ (NilH +E+ (OutH +E+ NilH))))
-                                                OutH
-                           (NilH +E+ (OutH +E+ (NilH +E+ NilH)))
-storage5 = sift (sift (sift insert))
-
-
 instance
   insert-h :
             {H0 H' : EffectH}
@@ -168,26 +134,208 @@ inj-right {H' = _} ⦃ sift w ⦄ (injl x) = injl x
 inj-right {H' = _} ⦃ sift w ⦄ (injr y) = injr (inj-right {{w}} y)
 
 -- so many hard work
-injl-ret-eq-h : {H H0 H' : EffectH}
+inl-ret-== : {H H0 H' : EffectH}
            -> {{w : EffectHStorage H H0 H' }}
            -> (op : OpH H0)
            -> RetH H (inj-left op) ≡ RetH H0 op
-injl-ret-eq-h ⦃ w = insert ⦄ op = refl
-injl-ret-eq-h ⦃ w = sift w ⦄ op = injl-ret-eq-h {{w}} op
+inl-ret-== ⦃ w = insert ⦄ op = refl
+inl-ret-== ⦃ w = sift w ⦄ op = inl-ret-== {{w}} op
+
+inr-ret-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H')
+           -> RetH H (inj-right op) ≡ RetH H' op
+inr-ret-== ⦃ w = insert ⦄ op = refl
+inr-ret-== ⦃ w = sift w ⦄ (injl x) = refl
+inr-ret-== ⦃ w = sift w ⦄ (injr op) = inr-ret-== {{w}} op
 
 
+inl-fork-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H0)
+           -> ForkH H (inj-left op) ≡ ForkH H0 op
+inl-fork-== ⦃ w = insert ⦄ op = refl
+inl-fork-== ⦃ w = sift w ⦄ op = inl-fork-== {{w}} op
+
+inr-fork-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H')
+           -> ForkH H (inj-right op) ≡ ForkH H' op
+inr-fork-== ⦃ w = insert ⦄ op = refl
+inr-fork-== ⦃ w = sift w ⦄ (injl x) = refl
+inr-fork-== ⦃ w = sift w ⦄ (injr op) = inr-fork-== {{w}} op
+
+-- OMG! what does it need for?
+inl-prong-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H0)
+           -> (b  : Op (ForkH H (inj-left op)))
+           -> Ret (ForkH H (inj-left op)) b ≡ Ret (ForkH H0 op) (subst Op (inl-fork-== {{w}} op) b)
+inl-prong-== ⦃ w = insert ⦄ op b = refl
+inl-prong-== ⦃ w = sift w ⦄ op b = inl-prong-== {{w}} op b
+
+inr-prong-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H')
+           -> (b  : Op (ForkH H (inj-right op)))
+           -> Ret (ForkH H (inj-right op)) b ≡ Ret (ForkH H' op) (subst Op (inr-fork-== {{w}} op) b)
+inr-prong-== ⦃ w = insert ⦄ op b = refl
+inr-prong-== ⦃ w = sift w ⦄ (injl x) b = refl
+inr-prong-== ⦃ w = sift w ⦄ (injr op) b = inr-prong-== {{w}} op b
+
+inl-prong2-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H0)
+           -> (b  : Op (ForkH H0 op))
+           -> Ret (ForkH H0 op) b ≡ Ret (ForkH H (inj-left op)) (subst Op (sym (inl-fork-== {{w}} op)) b)
+inl-prong2-== ⦃ w = insert ⦄ op b = refl
+inl-prong2-== ⦃ w = sift w ⦄ op b = inl-prong2-== {{w}} op b
+
+inr-prong2-== : {H H0 H' : EffectH}
+           -> {{w : EffectHStorage H H0 H' }}
+           -> (op : OpH H')
+           -> (b  : Op (ForkH H' op))
+           -> Ret (ForkH H' op) b ≡ Ret (ForkH H (inj-right op)) (subst Op (sym (inr-fork-== {{w}} op)) b)
+inr-prong2-== ⦃ w = insert ⦄ op b = refl
+inr-prong2-== ⦃ w = sift w ⦄ (injl x) b = refl
+inr-prong2-== ⦃ w = sift w ⦄ (injr op) b = inr-prong2-== {{w}} op b
+
+proj-ret-l : {H H0 H' : EffectH}
+             {{ w : EffectHStorage H H0 H' }}
+             -> (op : OpH H0)
+             -> RetH H (inj-left op)
+             -> RetH H0 op
+proj-ret-l ⦃ w = insert ⦄ op x = x
+proj-ret-l ⦃ w = sift w ⦄ op x = proj-ret-l {{w}} op x
+
+proj-ret-r : {H H0 H' : EffectH}
+             {{ w : EffectHStorage H H0 H' }}
+             -> (op : OpH H')
+             -> RetH H (inj-right op)
+             -> RetH H' op
+proj-ret-r ⦃ w = insert ⦄ op x = x
+proj-ret-r ⦃ w = sift w ⦄ (injl op) x = x
+proj-ret-r ⦃ w = sift w ⦄ (injr op) x = proj-ret-r {{w}} op x
+
+proj-ret2-l : {H H0 H' : EffectH}
+             {{ w : EffectHStorage H H0 H' }}
+             -> (op : OpH H0)
+             -> RetH H0 op
+             -> RetH H (inj-left op)
+proj-ret2-l ⦃ w = insert ⦄ op x = x
+proj-ret2-l ⦃ w = sift w ⦄ op x = proj-ret2-l {{w}} op x
+
+proj-ret2-r : {H H0 H' : EffectH}
+             {{ w : EffectHStorage H H0 H' }}
+             -> (op : OpH H')
+             -> RetH H' op
+             -> RetH H (inj-right op)
+proj-ret2-r ⦃ w = insert ⦄ op x = x
+proj-ret2-r ⦃ w = sift w ⦄ (injl op) x = x
+proj-ret2-r ⦃ w = sift w ⦄ (injr op) x = proj-ret2-r {{w}} op x
 
 
-{-
+proj-fork-l : {H H0 H' H'' : EffectH}
+              {{ w : EffectHStorage H H0 H' }}
+              -> (op : OpH H0)
+              -> ((b : Op (ForkH H0 op))           -> Hefty H'' (Ret (ForkH H0 op) b))
+              -> ((b : Op (ForkH H (inj-left op))) -> Hefty H'' (Ret (ForkH H (inj-left op)) b))
+proj-fork-l {{ w }} op f b = let
+                x = f (subst Op (inl-fork-== {{w}} op) b)
+                in subst ((Hefty _)) (sym (inl-prong-== {{w}} op b)) x
+
+proj-fork-r : {H H0 H' H'' : EffectH}
+              {{ w : EffectHStorage H H0 H' }}
+              -> (op : OpH H')
+              -> ((b : Op (ForkH H' op))            -> Hefty H'' (Ret (ForkH H' op) b))
+              -> ((b : Op (ForkH H (inj-right op))) -> Hefty H'' (Ret (ForkH H (inj-right op)) b))
+proj-fork-r {{ w }} op f b = let
+                x = f (subst Op (inr-fork-== {{w}} op) b)
+                in subst ((Hefty _)) (sym (inr-prong-== {{w}} op b)) x
+
+proj-fork2-l : {H H0 H' H'' : EffectH}
+              {{ w : EffectHStorage H H0 H' }}
+              -> (op : OpH H0)
+              -> ((b : Op (ForkH H (inj-left op))) -> Hefty H'' (Ret (ForkH H (inj-left op)) b))
+              -> ((b : Op (ForkH H0 op))           -> Hefty H'' (Ret (ForkH H0 op) b))
+proj-fork2-l {{ w }} op f b = let
+                x = f (subst Op (sym (inl-fork-== {{w}} op)) b)
+                in subst ((Hefty _)) (sym (inl-prong2-== {{w}} op b)) x
+
+proj-fork2-r : {H H0 H' H'' : EffectH}
+              {{ w : EffectHStorage H H0 H' }}
+              -> (op : OpH H')
+              -> ((b : Op (ForkH H (inj-right op))) -> Hefty H'' (Ret (ForkH H (inj-right op)) b))
+              -> ((b : Op (ForkH H' op))           -> Hefty H'' (Ret (ForkH H' op) b))
+proj-fork2-r {{ w }} op f b = let
+                x = f (subst Op (sym (inr-fork-== {{w}} op)) b)
+                in subst ((Hefty _)) (sym (inr-prong2-== {{w}} op b)) x
+
+case-h : {H H0 H' : EffectH}
+         {{ w : EffectHStorage H H0 H' }}
+         -> OpH H
+         -> (OpH H0 -> A)
+         -> (OpH H' -> A)
+         -> A
+case-h ⦃ w = insert ⦄ (injl x) f g = f x
+case-h ⦃ w = insert ⦄ (injr y) f g = g y
+case-h ⦃ w = sift w ⦄ (injl x) f g = g (injl x)
+case-h ⦃ w = sift w ⦄ (injr y) f g = case-h {{w}} y f λ z → g (injr z)
+
+case-h-== : {H H0 H' : EffectH}
+            {{ w : EffectHStorage H H0 H' }}
+            -> (op : OpH H)
+            -> ((op' : OpH H0) -> (op ≡ inj-left op')  -> A)
+            -> ((op' : OpH H') -> (op ≡ inj-right op') -> A)
+            -> A
+case-h-== ⦃ w = insert ⦄ (injl x) f g = f x refl
+case-h-== ⦃ w = insert ⦄ (injr y) f g = g y refl
+case-h-== ⦃ w = sift w ⦄ (injl x) f g = g (injl x) refl
+case-h-== ⦃ w = sift w ⦄ (injr y) f g = case-h-==
+              {{w}} y
+              (λ op' x → f op' (cong injr x) )
+              (λ op' x → g (injr op') (cong injr x))
+
+Lift : Effect -> EffectH
+OpH   (Lift x)   = Op x
+ForkH (Lift x) _ = Nil
+RetH  (Lift x)   = Ret x
+
+{- smart constructor for lift -}
+-- FIXME: Rename
 up : {E : Effect}
      -> {H H' : EffectH}
      -> {{ w : EffectHStorage H (Lift E) H' }}
      -> (op : Op E)
      -> Hefty H (Ret E op)
+up {{w}} op = impure (inj-left {{w}} op)
+                     (proj-fork-l {{w}} op (λ ()))
+                     \ x → pure (proj-ret-l {{w}} op x)
 
-up {{w}} op = impure {!!} {!!} {!!}
- impure
- (inj▹ₗ ⦃ w ⦄ op)
- (proj-fork▹ₗ ⦃ w ⦄ (λ b → ⊥-elim b))
- (pure ∘ proj-ret▹ₗ ⦃ w ⦄)
--}
+NilH : EffectH
+NilH = Lift Nil
+
+OutH : EffectH
+OutH = Lift Output
+
+storage1 : EffectHStorage (Lift Nil +E+ Lift Nil) NilH NilH
+storage1 = insert
+
+storage2 : EffectHStorage (OutH +E+ (OutH +E+ NilH)) OutH ((OutH +E+ NilH))
+storage2 = sift insert
+
+storage3 : EffectHStorage (NilH +E+ (OutH +E+ NilH))
+                                     OutH
+                          (NilH +E+ NilH)
+storage3 = sift insert
+
+storage4 : EffectHStorage  (OutH +E+ (NilH +E+ (OutH +E+ NilH)))
+                                                OutH
+                           (OutH +E+ (NilH +E+ NilH))
+storage4 = sift (sift insert)
+
+
+storage5 : EffectHStorage  (NilH +E+ (OutH +E+ (NilH +E+ (OutH +E+ NilH))))
+                                                OutH
+                           (NilH +E+ (OutH +E+ (NilH +E+ NilH)))
+storage5 = sift (sift (sift insert))
