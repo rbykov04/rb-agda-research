@@ -15,15 +15,12 @@ record Show (A : Set) : Set where
     field
         show : A -> String
 
-open Show
+open Show {{...}}
 
 instance
     showNat : Show Nat
-    show showNat zero = "zero"
-    show showNat (suc x) = "suc (" ++ show showNat x ++ ")"
+    show {{showNat}} zero = "zero"
+    show {{showNat}} (suc x) = "suc (" ++ show  x ++ ")"
 
-toText : {A : Set} -> {{Show A}} -> A -> String
-toText {{sh}} x = show (record { show = show sh }) x
-
-test : toText 1 ≡ "suc (zero)"
+test : show 1 ≡ "suc (zero)"
 test = refl
