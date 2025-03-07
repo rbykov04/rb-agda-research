@@ -1,7 +1,10 @@
+{-# OPTIONS --exact-split #-}
+{-# OPTIONS --overlapping-instances #-}
 module Hefty where
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
+open import Agda.Builtin.Bool
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
@@ -11,7 +14,7 @@ open import Agda.Builtin.String
 open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
-open import Free hiding (_>>=_)
+open import Free hiding (_>>=_; _>>_)
 
 private
   variable
@@ -23,12 +26,11 @@ private
     E : Set e
 
 
-
 record EffectH : Set₁ where
     field OpH  : Set
-          ForkH : OpH -> Effect
+          ForkH : OpH -> Effect -- FIXME Fork vs ForkH?
           RetH : OpH -> Set
-open EffectH
+open EffectH public
 
 _+E+_ : EffectH -> EffectH -> EffectH
 OpH   (a +E+ b) = Sum (OpH a) (OpH b)
@@ -63,6 +65,10 @@ censor1  = impure (censor (\ s → s ++ ".")) pure \ _ → pure zero
 _>>=_ : {H : EffectH} -> Hefty H A -> (A -> Hefty H B) -> Hefty H B
 pure x        >>= g = g x
 impure op f k >>= g = impure op f \ x → k x >>= g
+
+_>>_ : {H : EffectH} -> Hefty H A -> Hefty H B -> Hefty H B
+a >> b = a >>= \ _ → b
+
 
 {-
 --Maybe:
@@ -168,11 +174,11 @@ inr-fork-== ⦃ w = sift w ⦄ (injr op) = inr-fork-== {{w}} op
 -- OMG! what does it need for?
 inl-prong-== : {H H0 H' : EffectH}
            -> {{w : EffectHStorage H H0 H' }}
-           -> (op : OpH H0)
+           -> {op : OpH H0}
            -> (b  : Op (ForkH H (inj-left op)))
            -> Ret (ForkH H (inj-left op)) b ≡ Ret (ForkH H0 op) (subst Op (inl-fork-== {{w}} op) b)
-inl-prong-== ⦃ w = insert ⦄ op b = refl
-inl-prong-== ⦃ w = sift w ⦄ op b = inl-prong-== {{w}} op b
+inl-prong-== ⦃ w = insert ⦄ op = refl
+inl-prong-== ⦃ w = sift w ⦄ op = inl-prong-== {{w}} op
 
 inr-prong-== : {H H0 H' : EffectH}
            -> {{w : EffectHStorage H H0 H' }}
@@ -185,11 +191,11 @@ inr-prong-== ⦃ w = sift w ⦄ (injr op) b = inr-prong-== {{w}} op b
 
 inl-prong2-== : {H H0 H' : EffectH}
            -> {{w : EffectHStorage H H0 H' }}
-           -> (op : OpH H0)
+           -> {op : OpH H0}
            -> (b  : Op (ForkH H0 op))
            -> Ret (ForkH H0 op) b ≡ Ret (ForkH H (inj-left op)) (subst Op (sym (inl-fork-== {{w}} op)) b)
-inl-prong2-== ⦃ w = insert ⦄ op b = refl
-inl-prong2-== ⦃ w = sift w ⦄ op b = inl-prong2-== {{w}} op b
+inl-prong2-== ⦃ w = insert ⦄ b = refl
+inl-prong2-== ⦃ w = sift w ⦄ b = inl-prong2-== {{w}}  b
 
 inr-prong2-== : {H H0 H' : EffectH}
            -> {{w : EffectHStorage H H0 H' }}
@@ -202,11 +208,11 @@ inr-prong2-== ⦃ w = sift w ⦄ (injr op) b = inr-prong2-== {{w}} op b
 
 proj-ret-l : {H H0 H' : EffectH}
              {{ w : EffectHStorage H H0 H' }}
-             -> (op : OpH H0)
+             -> {op : OpH H0}
              -> RetH H (inj-left op)
              -> RetH H0 op
-proj-ret-l ⦃ w = insert ⦄ op x = x
-proj-ret-l ⦃ w = sift w ⦄ op x = proj-ret-l {{w}} op x
+proj-ret-l ⦃ w = insert ⦄ x = x
+proj-ret-l ⦃ w = sift w ⦄ x = proj-ret-l {{w}} x
 
 proj-ret-r : {H H0 H' : EffectH}
              {{ w : EffectHStorage H H0 H' }}
@@ -237,12 +243,12 @@ proj-ret2-r ⦃ w = sift w ⦄ (injr op) x = proj-ret2-r {{w}} op x
 
 proj-fork-l : {H H0 H' H'' : EffectH}
               {{ w : EffectHStorage H H0 H' }}
-              -> (op : OpH H0)
+              (op : OpH H0)
               -> ((b : Op (ForkH H0 op))           -> Hefty H'' (Ret (ForkH H0 op) b))
               -> ((b : Op (ForkH H (inj-left op))) -> Hefty H'' (Ret (ForkH H (inj-left op)) b))
 proj-fork-l {{ w }} op f b = let
                 x = f (subst Op (inl-fork-== {{w}} op) b)
-                in subst ((Hefty _)) (sym (inl-prong-== {{w}} op b)) x
+                in subst ((Hefty _)) (sym (inl-prong-== {{w}} b)) x
 
 proj-fork-r : {H H0 H' H'' : EffectH}
               {{ w : EffectHStorage H H0 H' }}
@@ -255,12 +261,12 @@ proj-fork-r {{ w }} op f b = let
 
 proj-fork2-l : {H H0 H' H'' : EffectH}
               {{ w : EffectHStorage H H0 H' }}
-              -> (op : OpH H0)
+              -> {op : OpH H0}
               -> ((b : Op (ForkH H (inj-left op))) -> Hefty H'' (Ret (ForkH H (inj-left op)) b))
               -> ((b : Op (ForkH H0 op))           -> Hefty H'' (Ret (ForkH H0 op) b))
-proj-fork2-l {{ w }} op f b = let
+proj-fork2-l {{ w }} {op} f b = let
                 x = f (subst Op (sym (inl-fork-== {{w}} op)) b)
-                in subst ((Hefty _)) (sym (inl-prong2-== {{w}} op b)) x
+                in subst ((Hefty _)) (sym (inl-prong2-== {{w}} b)) x
 
 proj-fork2-r : {H H0 H' H'' : EffectH}
               {{ w : EffectHStorage H H0 H' }}
@@ -310,7 +316,8 @@ up : {E : Effect}
      -> Hefty H (Ret E op)
 up {{w}} op = impure (inj-left {{w}} op)
                      (proj-fork-l {{w}} op (λ ()))
-                     \ x → pure (proj-ret-l {{w}} op x)
+                     \ x → pure (proj-ret-l {{w}} x)
+
 
 NilH : EffectH
 NilH = Lift Nil
@@ -339,3 +346,51 @@ storage5 : EffectHStorage  (NilH +E+ (OutH +E+ (NilH +E+ (OutH +E+ NilH))))
                                                 OutH
                            (NilH +E+ (OutH +E+ (NilH +E+ NilH)))
 storage5 = sift (sift (sift insert))
+
+{-
+
+W
+-- what does "D" stand for?
+--              We can't use this type inside EffetcH. (OpH : Set)
+--               |
+data CatchOpD : Set₁ where
+    catchD : Set -> CatchOpD
+
+
+CatchD : EffectH
+OpH   CatchD = {!CatchOpD!}
+ForkH CatchD = {!!}
+RetH  CatchD = {!!}
+
+-}
+record AlgH (H : EffectH) (F : Set -> Set) : Set₁ where
+    field alg : (op   : OpH H)
+                (fork : (s : Op (ForkH H op)) -> F (Ret (ForkH H op) s)) -- What is fork?
+                (k    : RetH H op -> F A)                                -- What is k?
+                -> F A
+open AlgH
+
+variable
+  m n : Level
+  F F₀ F₁ F₂ F₃ : Set n → Set (n ⊔ m)  -- What is it???
+  H0 H H' H'' H''' : EffectH
+
+
+-- What does F mean??
+foldH : (forall {A} -> A -> F A) -> AlgH H F -> Hefty H A -> F A
+foldH g a (pure x) = g x
+foldH g a (impure op f k) = alg a op (\ op → foldH g a (f op))
+                                     (\ op → foldH g a (k op))
+
+_+A+_ : {H1 H2 : EffectH} -> AlgH H1 F -> AlgH H2 F -> AlgH (H1 +E+ H2) F
+alg (A1 +A+ A2) (injl x) fork k = alg A1 x fork k
+alg (A1 +A+ A2) (injr y) fork k = alg A2 y fork k
+
+Elaboration : EffectH -> Effect -> Set₁
+Elaboration H Eff = AlgH H (Free Eff)
+
+
+-- How does it work?
+elaborate : {H : EffectH}{Eff : Effect} -> Elaboration H Eff -> Hefty H A -> Free Eff A
+elaborate elab hefty = foldH pure elab hefty
+
