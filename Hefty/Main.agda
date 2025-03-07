@@ -1,6 +1,6 @@
 
 {-# OPTIONS --exact-split #-}
-{-# OPTIONS --overlapping-instances #-}
+{-# OPTIONS  --backtracking-instance-search  #-}
 module Main where
 
 open import Agda.Builtin.String
@@ -85,6 +85,11 @@ transact : {H H' H0 H'' : EffectH}
            {{w3 : EffectHStorage H       Catch  H'''}}
             -> Hefty H Nat
 transact = do
-    up (put 1)
-    `catch (do up (put 2); (up throw) >>= ⊥-elim) (pure tt)
-    up get
+  up (put 1)
+  `catch
+    (do
+      up (put 2)
+      b <- (up throw)
+      ⊥-elim b)
+    (pure tt)
+  up get

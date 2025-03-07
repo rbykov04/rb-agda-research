@@ -7,4 +7,5 @@ Hefty: Hefty.agda
 
 clean:
 	rm -rf Malonzo
+	rm -rf *.agdai
 	rm -f Hefty

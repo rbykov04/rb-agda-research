@@ -1,6 +1,6 @@
 {-# OPTIONS --exact-split #-}
-{-# OPTIONS --overlapping-instances #-}
-
+--{-# OPTIONS --overlapping-instances #-}
+{-# OPTIONS  --backtracking-instance-search  #-}
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit

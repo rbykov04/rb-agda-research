@@ -1,5 +1,6 @@
 {-# OPTIONS --exact-split #-}
-{-# OPTIONS --overlapping-instances #-}
+--{-# OPTIONS --overlapping-instances #-}
+{-# OPTIONS  --backtracking-instance-search  #-}
 module Hefty where
 
 open import Agda.Builtin.String
