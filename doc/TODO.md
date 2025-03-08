@@ -43,7 +43,19 @@ Theory:
     - What does "syntactic type TY" mean?
     - Mystdlib/Universe
 - Read "Data type la carte"
+    - DONE p1 p2
+    - p3 Evalution
+- What is Functor?
+    - maybe play with this: https://stackoverflow.com/questions/13134825/how-do-functors-work-in-haskell
     
+haskell
+- -XOverlappingInstances is deprecated:
+```
+Main.hs:1:14: warning: [-Wdeprecated-flags]
+    -XOverlappingInstances is deprecated: instead use per-instance pragmas OVERLAPPING/OVERLAPPABLE/OVERLAPS
+  |
+```
+
 
 
 

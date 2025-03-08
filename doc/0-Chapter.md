@@ -56,11 +56,12 @@ I don't want to use stdlib this time.
 Let's just separate functions.
 
 Done:
-
+```
 Mystdlib
 ├── IO.agda       - IO
 ├── Mystdlib.agda - All function
 └── Universe.agda - Universe there :D
+```
 
 # 5. playing with case op
 
@@ -148,6 +149,7 @@ My plan:
 2. Repeat again in agda 
 
 So Let's create folder for data typa la carte research.
+
 Done:
 ```
  ~/dev/github/rb-agda-research   main ●  tree DataTypeLaCarte 
@@ -204,7 +206,7 @@ data Expr = Val Int
 But now. it is "open" or "unfixed". We can add new "constructors" on flight.
 Amazing and crazy!
 
-But we should a pay:
+But we should pay:
 
 ```
 example2 :: Expr (Val :+: Add)
