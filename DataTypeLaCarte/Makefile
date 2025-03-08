@@ -8,3 +8,5 @@ Main: Main.hs
 
 clean:
 	rm -rf Main
+	rm -rf Main.hi
+	rm -rf Main.o
