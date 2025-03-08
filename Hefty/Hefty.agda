@@ -33,6 +33,7 @@ record EffectH : Set₁ where
           RetH : OpH -> Set
 open EffectH public
 
+infixr 12 _+E+_
 _+E+_ : EffectH -> EffectH -> EffectH
 OpH   (a +E+ b) = Sum (OpH a) (OpH b)
 ForkH (a +E+ b) = elim (ForkH a) (ForkH b)
@@ -369,7 +370,7 @@ record AlgH (H : EffectH) (F : Set -> Set) : Set₁ where
                 (fork : (s : Op (ForkH H op)) -> F (Ret (ForkH H op) s)) -- What is fork?
                 (k    : RetH H op -> F A)                                -- What is k?
                 -> F A
-open AlgH
+open AlgH public
 
 variable
   m n : Level
@@ -382,7 +383,7 @@ foldH : (forall {A} -> A -> F A) -> AlgH H F -> Hefty H A -> F A
 foldH g a (pure x) = g x
 foldH g a (impure op f k) = alg a op (\ op → foldH g a (f op))
                                      (\ op → foldH g a (k op))
-
+infixr 12 _+A+_
 _+A+_ : {H1 H2 : EffectH} -> AlgH H1 F -> AlgH H2 F -> AlgH (H1 +E+ H2) F
 alg (A1 +A+ A2) (injl x) fork k = alg A1 x fork k
 alg (A1 +A+ A2) (injr y) fork k = alg A2 y fork k

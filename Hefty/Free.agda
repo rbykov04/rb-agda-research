@@ -1,9 +1,9 @@
 {-# OPTIONS --exact-split #-}
---{-# OPTIONS --overlapping-instances #-}
 {-# OPTIONS  --backtracking-instance-search  #-}
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
+open import Agda.Builtin.Maybe
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
 open import Agda.Builtin.IO
@@ -164,6 +164,7 @@ data ThrowOp : Set where
 Throw : Effect
 Op Throw = ThrowOp
 Ret Throw throw = ⊥
+
 
 
 coProduct : Effect -> Effect -> Effect
@@ -369,7 +370,7 @@ hello-throw1 = do `out "Hello";
 record Handler (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
     field ret : A -> P -> Free Continue B
           hdl : Alg E (P -> Free Continue B)
-open Handler
+open Handler public
 
 -- how does it work???
 -- I understand (maybe) what it doest. but how??
@@ -393,6 +394,9 @@ hOut : Handler A Output ⊤ ( A × String ) Eff
 ret hOut x _ = pure (x , "")
 hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
 
+hThrow : Handler A Throw ⊤ (Maybe A) Eff
+ret hThrow x _ = pure (just x)
+hdl hThrow throw _ _ = pure nothing
 
 
 Nil : Effect
@@ -450,7 +454,6 @@ test-incr = refl
 
 
 -- State Effect End
-
 infixl 1 _>>>=_
 postulate
     putStr : String → IO ⊤
@@ -479,3 +482,14 @@ program = do `out "Hello";
 
 main : IO ⊤
 main = snd (un ((givenHandle hOutIO program) tt))
+
+
+-- This is EFFECT MASKING
+-- What is it?????
+--
+#_ : {Eff Eff0 Eff' : Effect}
+     -> {{w : EffectStorage Eff Eff0 Eff'}}
+     -> Free Eff' A
+     -> Free Eff  A
+#_ ⦃ w ⦄ = fold pure \ op' k → impure (inj-insert-right op')
+                                      \ ret' → k (proj-ret-right {{w}} ret')

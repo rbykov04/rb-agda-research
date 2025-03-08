@@ -5,6 +5,7 @@ module Main where
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
+open import Agda.Builtin.Maybe
 open import Agda.Builtin.Bool
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat
@@ -17,6 +18,7 @@ open import Agda.Primitive
 
 open import Free hiding (_>>=_; _>>_)
 open import Hefty
+open import Catch
 
 private
   variable
@@ -27,59 +29,27 @@ private
     D : Set d
     E : Set e
 
-infix 0 if_then_else_
+eNil : {Eff : Effect} -> Elaboration (Lift Nil) Eff
+alg eNil ()
 
-if_then_else_ : Bool → A → A → A
-if true  then t else f = t
-if false then t else f = f
+-- Look at alg. It is field of AlgH.
+-- how that is posible to apply "alg" function to left part of " = "?
+-- alg (eLift ⦃ w = w ⦄)
+-- --------Eq-------
+-- eLift ⦃ w = w ⦄ .alg
+-- --------Eq-------
+-- I will use copattern. (Like in article)
+-- eLift ⦃ w = w ⦄ = record { alg = {!!} }
+--
+--But how does it work?? What does it do?
+-- I don't understand what impure do maybe
+eLift : {Eff Eff0 Eff' : Effect}
+        {{w : EffectStorage Eff Eff0 Eff'}}
+        -> Elaboration (Lift Eff0) Eff
+alg (eLift ⦃ w = w ⦄) op fork k = impure (inj-insert-left op)
+                                  \ ret → k (proj-ret-left {{w}} ret)
 
--- What is "a universe of types [Martin-Löf 1984]."
--- What does "syntactic type TY" mean?
-record Universe : Set₁ where
-    field Ty    : Set
-          [[_]] : Ty -> Set
-
-open Universe {{...}} public
-
-
-
-data CatchOp {{ u : Universe }} : Set where
-    catch : Ty -> CatchOp
-
--- How does it work?
-Catch : {{ u : Universe }} -> EffectH
-OpH   Catch = CatchOp
-ForkH Catch (catch t) = record
-    { Op = Bool -- why is bool here?
-    ; Ret = \ _ → [[ t ]] }
-RetH Catch (catch t) = [[ t ]]
-
-
-`catch   : {H H' : EffectH}
-          -> {{ u : Universe }}
-          -> {{ w : EffectHStorage H Catch H' }}
-          -> {t : Ty}
-          -> Hefty H [[ t ]]
-          -> Hefty H [[ t ]]
-          -> Hefty H [[ t ]]
-`catch  {{ w = w }}  m1 m2  =
-    impure
-        (inj-left {{w}} (catch _))
-        (proj-fork-l {{w}} _ λ b → if b then m1 else m2)
-        \ ret → pure ((proj-ret-l {{w}} ret))
-
-data Type : Set where
-  unit  : Type
-  num   : Type
-
-instance
-  TypeUniverse : Universe
-  Ty  ⦃ TypeUniverse ⦄ = Type
-  [[_]] ⦃ TypeUniverse ⦄ unit = ⊤
-  [[_]] ⦃ TypeUniverse ⦄ num  = Nat
-
-
-transact : {H H' H0 H'' : EffectH}
+transact : {H' H'' H''' : EffectH}
            {{w1 : EffectHStorage H (Lift State) H'}}
            {{w2 : EffectHStorage H (Lift Throw) H''}}
            {{w3 : EffectHStorage H       Catch  H'''}}
@@ -93,3 +63,16 @@ transact = do
       ⊥-elim b)
     (pure tt)
   up get
+
+
+
+-- how does it work??
+eTransact : Elaboration (Catch +E+ Lift Throw +E+ Lift State +E+ Lift Nil)
+            (coProduct Throw (coProduct State Nil))
+eTransact = eCatch +A+ eLift +A+ eLift +A+ eNil
+
+test-transact : un ((givenHandle hSt
+                   ((givenHandle hThrow
+                   (elaborate eTransact transact ))
+                   tt) )0) ≡ (just 2 , 2)
+test-transact = refl
