@@ -1,5 +1,4 @@
 {-# OPTIONS --exact-split #-}
---{-# OPTIONS --overlapping-instances #-}
 {-# OPTIONS  --backtracking-instance-search  #-}
 module Hefty where
 
@@ -15,6 +14,7 @@ open import Agda.Builtin.String
 open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
+open import Mystdlib.Mystdlib
 open import Free hiding (_>>=_; _>>_)
 
 private

@@ -6,13 +6,14 @@ open import Agda.Builtin.Maybe
 open import Agda.Builtin.Bool
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat
-open import Agda.Builtin.Equality
 open import Agda.Builtin.IO
 open import Agda.Builtin.Unit
 open import Agda.Builtin.String
 open import Agda.Builtin.Sigma
 open import Agda.Primitive
-open import Universe
+
+open import Mystdlib.Mystdlib
+open import Mystdlib.Universe
 
 open import Free  hiding (_>>=_; _>>_)
 open import Hefty hiding (_>>=_; _>>_)
@@ -25,13 +26,6 @@ private
     C : Set c
     D : Set d
     E : Set e
-
-
-infix 0 if_then_else_
-
-if_then_else_ : Bool → A → A → A
-if true  then t else f = t
-if false then t else f = f
 
 
 
@@ -75,9 +69,6 @@ alg eCatch (catch t) fork k = do
                             k x
         k x
   where open import Free using (_>>=_; _>>_)
-
-
-
 
 data Type : Set where
   unit  : Type

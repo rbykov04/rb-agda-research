@@ -7,5 +7,7 @@ Hefty: Hefty.agda
 
 clean:
 	rm -rf Malonzo
+	rm -rf dist-newstyle
 	rm -rf *.agdai
+	rm -rf Mystdlib/*.agdai
 	rm -f Hefty
