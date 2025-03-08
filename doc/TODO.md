@@ -17,19 +17,32 @@ The source code todo:
 - To separate effects to their own files
 - To build examples
 - To research how hefty works
+- to chose dir structure where place effects 
+
 
 Other
 - To build report
 
 Agda-lang
-- case_of_ use in Catch effect 
+- DONE case_of_ use in Catch effect 
+- How does case of work? We can declare lambda with where??
+```
+alg eCatch (catch t) fork k = do
+        res <- (# givenHandle hThrow (fork true) tt)
+        case res of \ where
+            (just x) -> k x
+            nothing -> do
+                x <- (fork false)
+                k x
+```
 
 
-Theorie:
+Theory:
 - What is "Universe" 
     - What is "a universe of types [Martin-Löf 1984]."
     - What does "syntactic type TY" mean?
     - Mystdlib/Universe
+- Read "Data type la carte"
     
 
 
