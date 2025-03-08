@@ -13,16 +13,24 @@ The article todo:
     - No chances to understand 
 
 The source code todo:
-- To separate "stdlib" to special folder
+- DONE: To separate "stdlib" to special folder
 - To separate effects to their own files
 - To build examples
 - To research how hefty works
 
 Other
 - To build report
+
+Agda-lang
+- case_of_ use in Catch effect 
+
+
+Theorie:
 - What is "Universe" 
     - What is "a universe of types [Martin-Löf 1984]."
     - What does "syntactic type TY" mean?
     - Mystdlib/Universe
+    
+
 
 

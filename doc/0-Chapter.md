@@ -56,14 +56,45 @@ I don't want to use stdlib this time.
 Let's just separate functions.
 
 Done:
-tree Hefty/Mystdlib
+
 Mystdlib
-├── IO.agda
-├── Mystdlib.agda
-└── Universe.agda
+├── IO.agda       - IO
+├── Mystdlib.agda - All function
+└── Universe.agda - Universe there :D
 
+# 5. playing with case op
 
+I have this code:
+```
+alg eCatch (catch t) fork k = do
+        (just x) <- (# givenHandle hThrow (fork true) tt)
+            where -- magic: it is so unintuitive
+                nothing -> do
+                            x <- (fork false)
+                            k x
+        k x
+  where open import Free using (_>>=_; _>>_)
+```
+What is here???
 
+Let's play with:
+
+```
+case_of_ : {A B : Type} -> A -> (A -> B) -> B
+case x of f = f x
+```
+
+Done:
+```
+alg eCatch (catch t) fork k = do
+        res <- (# givenHandle hThrow (fork true) tt)
+        case res of \ where
+            (just x) -> k x
+            nothing -> do
+                x <- (fork false)
+                k x
+  where open import Free using (_>>=_; _>>_)
+```
 
 
 [^1]: Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects

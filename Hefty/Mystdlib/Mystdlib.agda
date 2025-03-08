@@ -108,3 +108,6 @@ infix 0 if_then_else_
 if_then_else_ : Bool → A → A → A
 if true  then t else f = t
 if false then t else f = f
+
+case_of_ : A -> (A -> B) -> B
+case x of f = f x

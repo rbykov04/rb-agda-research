@@ -56,18 +56,17 @@ RetH Catch (catch t) = [[ t ]]
         \ ret → pure ((proj-ret-l {{w}} ret))
 
 -- What is happening???
--- What is maybe
 eCatch : {Eff Eff' : Effect}
         -> {{u : Universe}}
         -> {{w : EffectStorage Eff Throw Eff'}}
         -> Elaboration Catch Eff
 alg eCatch (catch t) fork k = do
-        (just x) <- (# givenHandle hThrow (fork true) tt)
-            where -- magic: it is so unintuitive
-                nothing -> do
-                            x <- (fork false)
-                            k x
-        k x
+        res <- (# givenHandle hThrow (fork true) tt)
+        case res of \ where
+            (just x) -> k x
+            nothing -> do
+                x <- (fork false)
+                k x
   where open import Free using (_>>=_; _>>_)
 
 data Type : Set where
