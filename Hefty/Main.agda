@@ -65,7 +65,6 @@ transact = do
   up get
 
 
-
 -- how does it work??
 eTransact : Elaboration (Catch +E+ Lift Throw +E+ Lift State +E+ Lift Nil)
             (coProduct Throw (coProduct State Nil))
