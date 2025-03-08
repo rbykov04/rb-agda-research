@@ -96,7 +96,62 @@ alg eCatch (catch t) fork k = do
   where open import Free using (_>>=_; _>>_)
 ```
 
+# 6. Data type la carte: Motivation
+There is one part of [^1] (most hardest part for me): 
+**2.2 Row Insertions and Smart Constructors**
+
+The problem is simple:
+
+From this code:
+```
+hello-throw : Free (Output ⊕ Throw) A
+hello-throw = impure (inj1 (out "Hello")) ( _ →
+              impure (inj1 (out " world!")) ( _ →
+              impure (inj2 throw) ⊥-elim))
+```
+
+To this:
+
+```
+hello-throw1 : {| Δ ∼ Output ◮ Δ1 |} → {| Δ ∼ Throw ◮ Δ2 |} → Free Δ A
+hello-throw1 = do `out "Hello"; `out " world!"; throw
+```
+
+But how?
+
+```
+To reduce syntactic overhead, we use row insertions and smart constructors.  [Swierstra 2008].
+```
+
+Look at this:
+```
+data _∼_▸_ : Effect → Effect → Effect → Set₁ where
+  insert :                 (Δ₀ ⊕ Δ′) ∼ Δ₀ ▸ Δ′
+  sift   : (Δ ∼ Δ₀ ▸ Δ′) → ((Δ₁ ⊕ Δ) ∼ Δ₀ ▸ (Δ₁ ⊕ Δ′))
+
+‵out : ⦃ Δ ∼ Output ▸ Δ′ ⦄ → String → Free Δ ⊤
+‵out ⦃ w ⦄ s = impure (inj▸ₗ (out s)) (pure ∘ proj-ret▸ₗ ⦃ w ⦄)
+```
+
+It irritates me a lot!
+
+I need to work on data type la carte [^2].
+
+
+# 7. Data type la carte: Overview and Start
+The article [^2] is not so long: 14 pages.
+And it is about Haskell. 
+
+My plan:
+
+1. Read and repeat in Haskell
+2. Repeat again in agda 
+
+So Let's create folder for data typa la carte research
+
 
 [^1]: Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects
 https://dl.acm.org/doi/10.1145/3571255
 https://github.com/heft-lang/POPL2023/tree/v1.0
+
+[^2]: Wouter Swierstra. 2008. Data types à la carte. J. Funct. Program. 18, 4 (2008), 423–436. https://doi.org/10.1017/S0956796808006758
