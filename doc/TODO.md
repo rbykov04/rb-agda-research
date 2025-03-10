@@ -44,8 +44,8 @@ Theory:
     - What does "syntactic type TY" mean?
     - Mystdlib/Universe
 - Read "Data type la carte"
-    - DONE p1 p2
-    - p3 Evalution
+    - Done haskell version
+    - write a small report about article
     - repeat in agda
     - Tmp.hs - play with Class and Instances more
     - Change infix operator to casual type name and rebuild system
@@ -53,6 +53,7 @@ Theory:
         - :+:
     - Read Next "These monads are known as free monads (Awodey, 2006).""
         Awodey, S. (2006) Category Theory. Oxford Logic Guides, vol. 49. Oxford: Oxford University Press.
+    - Read Wadler https://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt
 
 
 - What is Functor?
@@ -65,6 +66,8 @@ Main.hs:1:14: warning: [-Wdeprecated-flags]
     -XOverlappingInstances is deprecated: instead use per-instance pragmas OVERLAPPING/OVERLAPPABLE/OVERLAPS
   |
 ```
+- Read about Haskell Stdlib: Monad and applicative
+
 
 ## Data Type la carte
 
