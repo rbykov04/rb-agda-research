@@ -166,9 +166,6 @@ infixl 7 |*|
 (|*|) :: (Mul :<: f) => Expr f -> Expr f -> Expr f
 x |*| y = inject (Mul x y)
 
-
-
-
 --example4 :: Expr (Val :+: Add :+: Mul)
 example4 :: Expr (Val :+: Add :+: Mul)
 example4 = val 80 |*| val 5 |+| val 4
@@ -214,6 +211,130 @@ tryDistr e = case distr e of
 
 example6 :: Expr (Val :+: Add :+: Mul)
 example6 = val 80 |*| (val 5 |+| val 4)
+
+
+-- Part 6 Monands for Free
+
+data Term f a =
+    Pure a
+  | Impure (f (Term f a))
+
+instance Functor f => Functor (Term f) where
+  fmap f (Pure x)   = Pure (f x)
+  fmap f (Impure t) = Impure (fmap (fmap f) t) -- ????
+
+-- this is written with GigaChat
+-- there is not anything about this in Paper
+-- and then fix with this: https://www.extrema.is/blog/2022/04/04/data-types-a-la-carte
+instance Functor f => Applicative (Term f) where
+  pure                 = Pure
+  Pure f <*> Pure x    = Pure (f x)
+  Pure f <*> Impure tx = Impure (fmap (f <$>) tx)
+  Impure tf <*> ta = Impure (fmap (\func -> func <*> ta) tf)
+
+
+instance Functor f => Monad (Term f) where
+  return x         = Pure x
+
+  (Pure x) >>= f   = f x
+  (Impure t) >>= f = Impure (fmap (>>=f) t)
+
+-- They are also Free Monads:
+data Zero a            -- Identity monad
+data One a     = One   -- Maybe monad
+data Const e a = Const -- Error monad
+
+-- Add memory to our calc
+data Incr t = Incr Int t          deriving (Functor)
+data Recall t = Recall (Int -> t) deriving (Functor)
+
+injectM :: (g :<: f) => g (Term f a) -> Term f a
+injectM = Impure . inj
+
+incr :: (Incr :<: f) => Int -> Term f ()
+incr i = injectM (Incr i (Pure ()))
+
+recall :: (Recall :<: f) => Term f Int
+recall = injectM (Recall Pure)
+
+tick :: Term (Recall :+: Incr) Int
+tick = do y <- recall
+          incr 1
+          return y
+
+--- ???
+foldTerm :: Functor f => (a -> b) -> (f b -> b) -> Term f a -> b
+foldTerm pure imp (Pure x)   = pure x
+foldTerm pure imp (Impure t) = imp (fmap (foldTerm pure imp) t)
+
+newtype Mem = Mem Int deriving Show
+
+class Functor f => Run f where
+  runAlgebra :: f (Mem -> (a, Mem)) -> Mem -> (a, Mem)
+
+instance Run Incr where
+  runAlgebra (Incr x save) (Mem i) = save (Mem (i + x))
+
+instance Run Recall where
+  runAlgebra (Recall f) (Mem i) = f i (Mem i)
+
+instance (Run f, Run g) => Run (f :+: g) where
+  runAlgebra (Inl x) = runAlgebra x
+  runAlgebra (Inr y) = runAlgebra y
+
+
+run :: Run f => Term f a -> Mem -> (a, Mem)
+run = foldTerm (,) runAlgebra
+
+data Teletype a =
+    GetChar (Char -> a)
+  | PutChar Char a
+  deriving Functor
+
+data Filesystem a =
+    ReadFile  FilePath (String -> a)
+  | WriteFile FilePath String a
+  deriving Functor
+
+class Functor f => Exec f where
+  execAlgebra :: f (IO a) -> IO a
+
+instance Exec Teletype where
+  execAlgebra (GetChar f)    = Prelude.getChar >>= f
+  execAlgebra (PutChar c io) = Prelude.putChar c >> io
+
+instance Exec Filesystem where
+  execAlgebra (ReadFile path f)    = Prelude.readFile path >>= f
+  execAlgebra (WriteFile path str io) = Prelude.writeFile path str >> io
+
+instance (Exec f, Exec g) => Exec (f :+: g) where
+  execAlgebra (Inl x) = execAlgebra x
+  execAlgebra (Inr y) = execAlgebra y
+
+exec :: Exec f => Term f a -> IO a
+exec = foldTerm return execAlgebra
+
+
+putCharMy :: (Teletype :<: f) => Char -> Term f ()
+putCharMy ch = injectM (PutChar ch (Pure ()))
+
+getCharMy :: (Teletype :<: f) => Term f Char
+getCharMy = injectM (GetChar Pure)
+
+readFileMy :: (Filesystem :<: f) => FilePath -> Term f String
+readFileMy path = injectM (ReadFile path Pure )
+
+writeFileMy :: (Filesystem :<: f) => FilePath -> String -> Term f ()
+writeFileMy path str = injectM (WriteFile path str (Pure ()))
+
+
+
+cat :: FilePath -> Term (Teletype :+: Filesystem) ()
+cat path = do
+  file <- readFileMy path
+  mapM putCharMy file
+  return ()
+
 -- Let's run
 main :: IO ()
 main = do
@@ -229,3 +350,9 @@ main = do
   putStrLn $ pretty example4  ++ " => " ++ pretty (tryDistr example4)
   putStrLn $ pretty example5  ++ " => " ++ pretty (tryDistr example5)
   putStrLn $ pretty example6  ++ " => " ++ pretty (tryDistr example6)
+
+  putStrLn "Part6"
+  putStrLn $ " => " ++ show (run tick (Mem 4))
+  putStrLn $ " => " ++ show (run tick (Mem 2))
+  putStrLn "Part7"
+  exec $ cat "test.txt"

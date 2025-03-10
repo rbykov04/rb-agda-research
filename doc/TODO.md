@@ -51,6 +51,9 @@ Theory:
     - Change infix operator to casual type name and rebuild system
         - :<:
         - :+:
+    - Read Next "These monads are known as free monads (Awodey, 2006).""
+        Awodey, S. (2006) Category Theory. Oxford Logic Guides, vol. 49. Oxford: Oxford University Press.
+
 
 - What is Functor?
     - maybe play with this: https://stackoverflow.com/questions/13134825/how-do-functors-work-in-haskell
@@ -61,6 +64,25 @@ haskell
 Main.hs:1:14: warning: [-Wdeprecated-flags]
     -XOverlappingInstances is deprecated: instead use per-instance pragmas OVERLAPPING/OVERLAPPABLE/OVERLAPS
   |
+```
+
+## Data Type la carte
+
+think:
+```
+data Term f a =
+Pure a
+| Impure (f (Term f a))
+
+In general, a structure is called free when it is left-adjoint to a forgetful functor.
+In this specific instance, the Term data type is a higher-order functor that maps
+a functor f to the monad Term f ; this is illustrated by the above two instance
+definitions. This Term functor is left-adjoint to the forgetful functor from monads
+to their underlying functors.
+
+All left-adjoint functors preserve coproducts. In particular, computing the coproduct of two free monads reduces to computing the coproduct of their underlying
+functors, which is exactly what we achieved in Section 2. Throughout this section,
+we will exploit this property to define monads modularly.
 ```
 
 
