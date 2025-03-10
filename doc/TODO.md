@@ -17,6 +17,7 @@ The source code todo:
 - To separate effects to their own files
 - To build examples
 - To research how hefty works
+    - play with effects without smart constuctors
 - to chose dir structure where place effects 
 
 
@@ -45,6 +46,8 @@ Theory:
 - Read "Data type la carte"
     - DONE p1 p2
     - p3 Evalution
+    - repeat in agda
+
 - What is Functor?
     - maybe play with this: https://stackoverflow.com/questions/13134825/how-do-functors-work-in-haskell
     
