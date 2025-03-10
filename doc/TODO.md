@@ -47,6 +47,10 @@ Theory:
     - DONE p1 p2
     - p3 Evalution
     - repeat in agda
+    - Tmp.hs - play with Class and Instances more
+    - Change infix operator to casual type name and rebuild system
+        - :<:
+        - :+:
 
 - What is Functor?
     - maybe play with this: https://stackoverflow.com/questions/13134825/how-do-functors-work-in-haskell
