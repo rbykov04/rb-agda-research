@@ -1,9 +1,10 @@
 .PHONY: run clean
-run: Hefty
-	./Hefty
 
-Hefty: Hefty.agda
-	agda  -i. --compile --library=standard-library-2.2 Hefty.agda
+run: HelloWorld
+	./HelloWorld
+
+HelloWorld: Example/HelloWorld.agda
+	agda  -i. --compile --library=standard-library-2.2 Example/HelloWorld.agda
 
 clean:
 	rm -rf Malonzo
@@ -11,3 +12,4 @@ clean:
 	rm -rf *.agdai
 	rm -rf Mystdlib/*.agdai
 	rm -f Hefty
+	rm -f HelloWorld

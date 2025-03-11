@@ -84,18 +84,3 @@ test-transact : un ((givenHandle hSt
                    tt) )0) ≡ (just 2 , 2)
 test-transact = refl
 
-{-
-hOutIO : {Eff : Effect} -> Handler A Output ⊤ ( A × IO ⊤ ) Eff
-ret hOutIO x _ = pure (x , return tt)
-hdl hOutIO (out s) k p = do (x , s') <- k tt p; pure (x , (putStr s >>> s'))
-
-
-
-program : Free (coProduct Output Nil) ⊤
-program = do `out "Hello";
-              `out " ";
-              `out "world!\n"
-
-main : IO ⊤
-main = snd (un ((givenHandle hOutIO program) tt))
--}
