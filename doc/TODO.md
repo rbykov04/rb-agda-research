@@ -15,6 +15,9 @@ The article todo:
 The source code todo:
 - DONE: To separate "stdlib" to special folder
 - To separate effects to their own files
+    - Done Catch
+    - Out
+    - Throw
 - To build examples
 - To research how hefty works
     - play with effects without smart constuctors
@@ -54,6 +57,8 @@ Theory:
     - Read Next "These monads are known as free monads (Awodey, 2006).""
         Awodey, S. (2006) Category Theory. Oxford Logic Guides, vol. 49. Oxford: Oxford University Press.
     - Read Wadler https://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt
+    - 8 Discussion - I need to unfold this to extra todos
+
 
 
 - What is Functor?
@@ -89,5 +94,5 @@ we will exploit this property to define monads modularly.
 ```
 
 
-
+- Add bib tex file
 

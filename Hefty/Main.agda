@@ -16,9 +16,11 @@ open import Agda.Builtin.String
 open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
+open import Mystdlib.Mystdlib
+
 open import Free hiding (_>>=_; _>>_)
 open import Hefty
-open import Catch
+open import Effect.Hefty.Catch
 
 private
   variable

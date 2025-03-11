@@ -1,4 +1,4 @@
-module Catch where
+module Effect.Hefty.Catch where
 
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
