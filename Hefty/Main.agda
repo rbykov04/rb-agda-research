@@ -17,10 +17,16 @@ open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
 open import Mystdlib.Mystdlib
+open import Mystdlib.IO
 
 open import Free hiding (_>>=_; _>>_)
 open import Hefty
+open import Effect.Free.State
+open import Effect.Free.Output
+open import Effect.Free.Throw
+open import Effect.Free.Nil
 open import Effect.Hefty.Catch
+open import Effect.Hefty.Lift
 
 private
   variable
@@ -77,3 +83,19 @@ test-transact : un ((givenHandle hSt
                    (elaborate eTransact transact ))
                    tt) )0) ≡ (just 2 , 2)
 test-transact = refl
+
+{-
+hOutIO : {Eff : Effect} -> Handler A Output ⊤ ( A × IO ⊤ ) Eff
+ret hOutIO x _ = pure (x , return tt)
+hdl hOutIO (out s) k p = do (x , s') <- k tt p; pure (x , (putStr s >>> s'))
+
+
+
+program : Free (coProduct Output Nil) ⊤
+program = do `out "Hello";
+              `out " ";
+              `out "world!\n"
+
+main : IO ⊤
+main = snd (un ((givenHandle hOutIO program) tt))
+-}

@@ -111,3 +111,7 @@ if false then t else f = f
 
 case_of_ : A -> (A -> B) -> B
 case x of f = f x
+
+
+_++_ : String -> String -> String
+a ++ b = primStringAppend a b

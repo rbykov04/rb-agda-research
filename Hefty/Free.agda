@@ -24,9 +24,6 @@ private
     D : Set d
     E : Set e
 
----
-
-
 record Effect : Set₁ where
  field Op  : Set
        Ret : Op -> Set
@@ -43,61 +40,12 @@ variable
     Eff1  : Effect
     Eff2  : Effect
 
-
-data OutOp : Set where
-    out : String -> OutOp
-
-
-Output : Effect
-Op  Output = OutOp
-Ret Output (out str) = ⊤
-
-
-testOut : OutOp
-testOut = out "aa"
-
-hello0 : Free Output ⊤
-hello0 = pure tt
-
-hello2 : Free Output Nat
-hello2 = pure 1
-
-hello4 : Free Output ⊤
-hello4 = impure (out "Hello") pure
-
-helloWorld : Free Output ⊤
-helloWorld = impure (out "Hello") (λ _ -> impure (out " World") pure)
-
-
-data ClickOp : Set where
-    click : Nat -> ClickOp
-    clack : Nat -> ClickOp
-
-Clicker : Effect
-Op Clicker = ClickOp
-Ret Clicker (click x) = Nat
-Ret Clicker (clack x) = String
-
-
-tick : Free Clicker Nat
-tick = impure (click 1) λ x -> impure (click x) pure
-
-
-data ThrowOp : Set where
-    throw : ThrowOp
-
-Throw : Effect
-Op Throw = ThrowOp
-Ret Throw throw = ⊥
-
-
-
 coProduct : Effect -> Effect -> Effect
 Op  (coProduct a b) = Sum (Op a)  (Op b)
 Ret (coProduct a b) x = elim (Ret a) (Ret b) x
 
-hello-throw : Free (coProduct Output Throw) A
-hello-throw = impure (injl (out "Hello")) (λ _ -> impure (injr throw) ⊥-elim)
+{-
+-}
 
 
 
@@ -269,19 +217,7 @@ to-front { Here = Here } {{ sift {E = E} {There = There} w }} (impure (injr op) 
     (λ op' eq -> impure (injl op') λ x -> to-front {{sift w}} (k (help  {{w}} op' op eq x)))
     (λ op' eq -> impure (injr (injr op')) λ x -> to-front {{sift w}} (k (help2 {{w}} op' op eq x)))
 
-`out : {E There : Effect}
-     -> {{ EffectStorage E Output There }}
-     -> String
-     -> Free E ⊤
-`out {{ w }} str = impure (inj-insert-left (out str)) λ x -> pure ((proj-ret-left {{w}} x))
-
---Rethink this
-`throw : {E There : Effect}
-     -> {{ EffectStorage E Throw There }}
-     -> Free E A
-`throw {{ w }} = impure (inj-insert-left throw ) (λ x -> ⊥-elim (proj-ret-left {{w}} x))
-
-
+{-
 hello-throw1 : {E There1 There2 : Effect} {A : Set}
              -> {{EffectStorage E Output There1}}
              -> {{EffectStorage E Throw There2}}
@@ -291,6 +227,7 @@ hello-throw1 = do `out "Hello";
                     `out " ";
                     `out "world";
                     `throw
+-}
 
 record Handler (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
     field ret : A -> P -> Free Continue B
@@ -312,87 +249,6 @@ givenHandle {A} {B} {P} {E} {Here} {There} h eff =
     func  (injl op) k p = hdl h op k p
     func (injr op) k p = impure op (λ x → k x p)
 
-_++_ : String -> String -> String
-a ++ b = primStringAppend a b
-
-hOut : Handler A Output ⊤ ( A × String ) Eff
-ret hOut x _ = pure (x , "")
-hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
-
-hThrow : Handler A Throw ⊤ (Maybe A) Eff
-ret hThrow x _ = pure (just x)
-hdl hThrow throw _ _ = pure nothing
-
-
-Nil : Effect
-Op  Nil = ⊥
-Ret Nil = ⊥-elim
-
-un : Free Nil A -> A
-un (pure x) = x
-
-hello-program : Free (coProduct Output Nil) ⊤
-hello-program = do `out "Hello"; `out " "; `out "world!\n"
-
-test-hello :
-    un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!\n")
-test-hello = refl
-
--- State Effect
-data StateOp : Set where
-    get : StateOp
-    put : Nat -> StateOp
-
-State : Effect
-Op  State = StateOp
-Ret State get = Nat
-Ret State (put x) = ⊤
-
-hSt : Handler A State Nat ( A × Nat ) Eff
-ret hSt x s = pure (x , s)
-hdl hSt get k n = k n n
-hdl hSt (put m) k _ = k tt m
-
-
-`put :
-      {E There : Effect}
-     -> {{ EffectStorage E State There }}
-     -> Nat
-     -> Free E ⊤
-`put {{ w }} n = impure (inj-insert-left (put n) ) (λ x -> pure (proj-ret-left {{w}} x))
-
-`get :
-      {E There : Effect}
-     -> {{ EffectStorage E State There }}
-     -> Free E Nat
-`get {{ w }}  = impure (inj-insert-left get ) (λ x -> pure (proj-ret-left {{w}} x))
-
-`incr :
-      {E There : Effect}
-     -> {{ EffectStorage E State There }}
-     -> Free E ⊤
-`incr  = do n <- `get; `put (1 + n)
-
-test-incr :
-    un ((givenHandle hSt `incr ) 0) ≡ (tt , 1)
-test-incr = refl
-
-
--- State Effect End
-hOutIO : Handler A Output ⊤ ( A × IO ⊤ ) Eff
-ret hOutIO x _ = pure (x , return tt)
-hdl hOutIO (out s) k p = do (x , s') <- k tt p; pure (x , (putStr s >>> s'))
-
-
-program : Free (coProduct Output Nil) ⊤
-program = do `out "Hello";
-              `out " ";
-              `out "world!\n"
-
-main : IO ⊤
-main = snd (un ((givenHandle hOutIO program) tt))
-
-
 -- This is EFFECT MASKING
 -- What is it?????
 --
@@ -402,3 +258,4 @@ main = snd (un ((givenHandle hOutIO program) tt))
      -> Free Eff  A
 #_ ⦃ w ⦄ = fold pure \ op' k → impure (inj-insert-right op')
                                       \ ret' → k (proj-ret-right {{w}} ret')
+

@@ -90,28 +90,6 @@ data EffectHStorage : EffectH -> EffectH -> EffectH → Set₁ where
           -> EffectHStorage H H0 H'
           -> EffectHStorage (H1 +E+ H) H0 (H1 +E+ H')
 
-
-data ListSt : List Nat -> Nat -> List Nat  -> Set where
-    here  : {x0 : Nat} {x' : List Nat}      -> ListSt (x0 ∷ x') x0 x'
-    there : {x0 x1 : Nat} {x x' : List Nat} -> ListSt x x0 x' -> ListSt (x1 ∷ x) x0 (x1 ∷ x')
-
-ll : ListSt (0 ∷ []) 0 []
-ll = here
-
-l2 : ListSt (zero ∷ zero ∷ []) 0 (zero ∷ [])
-l2 = there here
-
-l3 : ListSt (zero ∷ zero ∷ 5 ∷ []) 5 (zero ∷ zero ∷ [])
-l3 = there (there here)
-
-l4 : ListSt (zero ∷ zero ∷ zero ∷ 5 ∷ []) 5 (zero ∷ zero ∷ zero ∷ [])
-l4 = there (there (there here))
-
-l5 : ListSt (60 ∷ 10 ∷ 20 ∷ 5 ∷ []) 5 (60 ∷ 10 ∷ 20 ∷ [])
-l5 = there (there (there here))
-
-
-
 instance
   insert-h :
             {H0 H' : EffectH}
@@ -303,51 +281,6 @@ case-h-== ⦃ w = sift w ⦄ (injr y) f g = case-h-==
               {{w}} y
               (λ op' x → f op' (cong injr x) )
               (λ op' x → g (injr op') (cong injr x))
-
-Lift : Effect -> EffectH
-OpH   (Lift x)   = Op x
-ForkH (Lift x) _ = Nil
-RetH  (Lift x)   = Ret x
-
-{- smart constructor for lift -}
--- FIXME: Rename
-up : {E : Effect}
-     -> {H H' : EffectH}
-     -> {{ w : EffectHStorage H (Lift E) H' }}
-     -> (op : Op E)
-     -> Hefty H (Ret E op)
-up {{w}} op = impure (inj-left {{w}} op)
-                     (proj-fork-l {{w}} op (λ ()))
-                     \ x → pure (proj-ret-l {{w}} x)
-
-
-NilH : EffectH
-NilH = Lift Nil
-
-OutH : EffectH
-OutH = Lift Output
-
-storage1 : EffectHStorage (Lift Nil +E+ Lift Nil) NilH NilH
-storage1 = insert
-
-storage2 : EffectHStorage (OutH +E+ (OutH +E+ NilH)) OutH ((OutH +E+ NilH))
-storage2 = sift insert
-
-storage3 : EffectHStorage (NilH +E+ (OutH +E+ NilH))
-                                     OutH
-                          (NilH +E+ NilH)
-storage3 = sift insert
-
-storage4 : EffectHStorage  (OutH +E+ (NilH +E+ (OutH +E+ NilH)))
-                                                OutH
-                           (OutH +E+ (NilH +E+ NilH))
-storage4 = sift (sift insert)
-
-
-storage5 : EffectHStorage  (NilH +E+ (OutH +E+ (NilH +E+ (OutH +E+ NilH))))
-                                                OutH
-                           (NilH +E+ (OutH +E+ (NilH +E+ NilH)))
-storage5 = sift (sift (sift insert))
 
 {-
 
