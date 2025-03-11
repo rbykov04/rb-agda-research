@@ -1,6 +1,7 @@
 {-# OPTIONS --exact-split #-}
 {-# OPTIONS  --backtracking-instance-search  #-}
 
+module Effect.Core.Free where
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Maybe

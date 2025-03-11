@@ -15,8 +15,8 @@ open import Agda.Primitive
 open import Mystdlib.Mystdlib
 open import Mystdlib.Universe
 
-open import Free  hiding (_>>=_; _>>_)
-open import Hefty hiding (_>>=_; _>>_)
+open import Effect.Core.Free  hiding (_>>=_; _>>_)
+open import Effect.Core.Hefty  hiding (_>>=_; _>>_)
 open import Effect.Free.Output
 open import Effect.Free.Throw
 open import Effect.Free.Nil

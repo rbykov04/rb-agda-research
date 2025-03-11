@@ -14,8 +14,8 @@ open import Agda.Builtin.Sigma
 open import Agda.Primitive
 
 open import Mystdlib.Mystdlib
-open import Free hiding (_>>=_; _>>_)
-open import Hefty hiding (_>>=_; _>>_)
+open import Effect.Core.Free hiding (_>>=_; _>>_)
+open import Effect.Core.Hefty hiding (_>>=_; _>>_)
 open import Effect.Free.Output
 open import Effect.Free.Throw
 open import Effect.Free.Nil
@@ -103,7 +103,7 @@ l5 = there (there (there here))
      -> {{ EffectStorage E State There }}
      -> Free E ⊤
 `incr  = do n <- `get; `put (1 + n)
-  where open import Free using (_>>=_; _>>_)
+  where open import Effect.Core.Free using (_>>=_; _>>_)
 
 test-incr :
     un ((givenHandle hSt `incr ) 0) ≡ (tt , 1)
@@ -111,13 +111,13 @@ test-incr = refl
 
 hello-program : Free (coProduct Output Nil) ⊤
 hello-program = do `out "Hello"; `out " "; `out "world!\n"
-  where open import Free using (_>>=_; _>>_)
+  where open import Effect.Core.Free using (_>>=_; _>>_)
 
 
 hOut : Handler A Output ⊤ ( A × String ) Eff
 ret hOut x _ = pure (x , "")
 hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
-  where open import Free using (_>>=_; _>>_)
+  where open import Effect.Core.Free using (_>>=_; _>>_)
 
 test-hello :
     un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!\n")
