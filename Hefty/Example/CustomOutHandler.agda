@@ -1,5 +1,5 @@
 {-# OPTIONS  --backtracking-instance-search  #-}
-module Example.HelloWorld where
+module Example.CustomOutHandler where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma

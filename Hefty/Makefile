@@ -1,10 +1,10 @@
 .PHONY: run clean
 
-run: HelloWorld
-	./HelloWorld
+run: CustomOutHandler
+	./CustomOutHandler
 
-HelloWorld: Example/HelloWorld.agda
-	agda  -i. --compile --library=standard-library-2.2 Example/HelloWorld.agda
+CustomOutHandler: Example/CustomOutHandler.agda
+	agda  -i. --compile --library=standard-library-2.2 Example/CustomOutHandler.agda
 
 clean:
 	rm -rf Malonzo
@@ -12,4 +12,4 @@ clean:
 	rm -rf *.agdai
 	rm -rf Mystdlib/*.agdai
 	rm -f Hefty
-	rm -f HelloWorld
+	rm -f CustomOutHandler
