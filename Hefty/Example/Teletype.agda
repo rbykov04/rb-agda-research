@@ -71,17 +71,6 @@ a >>> b = a >>>= λ _ → b
 Alg2 : (Eff : Effect) -> (A : Set) -> Set
 Alg2 Eff A = (op : Op Eff)(k : Ret Eff op -> (IO A)) -> IO A
 
-
-
-
-
-{-
-fold2 pure' alg (pure x) = pure' x
-fold2 pure' alg (impure op k) with alg op
-... | imp = imp \ x -> (fold2 pure' alg) (k x)
--}
-
-
 record Handler2 (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
     field ret : A -> IO (P -> Free Continue B)
           hdl : Alg2 E (P -> Free Continue B)
@@ -94,10 +83,15 @@ hTeletype .ret = {!!}
 hTeletype .hdl (putChar ch) k = putCharIO ch >>> k tt
 hTeletype .hdl getChar f      = getCharIO >>>= f
 
-
-
 fold2 : (A -> B) -> Alg2 Eff B -> Free Eff A -> B
 fold2 pure' alg  = {!!}
+
+{-
+fold2 pure' alg (pure x) = pure' x
+fold2 pure' alg (impure op k) with alg op
+... | imp = imp \ x -> (fold2 pure' alg) (k x)
+-}
+
 
 
 -- like in Data Type La Carte
