@@ -12,7 +12,6 @@ open import Agda.Primitive
 open import Mystdlib.Mystdlib
 
 open import Effect.Core.Free hiding (Handler)
---hiding (_>>=_ ; _>>_)
 open import Effect.Free.Output
 open import Effect.Free.Nil
 
@@ -75,7 +74,7 @@ record Handler2 (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) :
     field ret : A -> IO (P -> Free Continue B)
           hdl : Alg2 E (P -> Free Continue B)
 open Handler2 public
-
+{-
 -- it is like Exec Teletype in Data Type La Carte
 hTeletype : {Eff : Effect} -> Handler2 A Teletype ⊤ (IO ⊤) Eff
 hTeletype .ret = {!!}
@@ -85,6 +84,7 @@ hTeletype .hdl getChar f      = getCharIO >>>= f
 
 fold2 : (A -> B) -> Alg2 Eff B -> Free Eff A -> B
 fold2 pure' alg  = {!!}
+-}
 
 {-
 fold2 pure' alg (pure x) = pure' x
@@ -93,7 +93,7 @@ fold2 pure' alg (impure op k) with alg op
 -}
 
 
-
+{-
 -- like in Data Type La Carte
 exec :
             {A B P : Set}
@@ -107,7 +107,6 @@ exec {A} {B} {P} {E} {Here} {There} h eff =
     func : Alg2 (coProduct Here There) (P -> Free There B)
     func (injl x) k = h .hdl x k
     func (injr y) k = {!!}
-    {-
     func (injl op) k with h .hdl op
     func (injl op) k with h .hdl op
     ... | q = q {!!}
@@ -120,14 +119,94 @@ exec {A} {B} {P} {E} {Here} {There} h eff =
     --impure ? ?
 -}
 
-putStrLn : String -> Free (coProduct Teletype Nil) ⊤
+{-
+putStrLn : String -> Free Teletype ⊤
 putStrLn x = f (primStringToList x) where
-  f : List Char ->  Free (coProduct Teletype Nil) ⊤
+  f : List Char ->  Free Teletype ⊤
   f [] = `putChar '\n'
   f (x ∷ str) = do
     `putChar x
     f str
 
+-}
+
+{-
+foldTerm :: {} (A -> B) -> (F B -> B) -> Free Teletype ⊤ -> B
+foldTerm pure imp (Pure x)   = pure x
+foldTerm pure imp (Impure t) = imp (fmap (foldTerm pure imp) t)
+-}
+
+
+--Alg2 : (Eff : Effect) -> (A : Set) -> Set
+--Alg2 Eff A = (op : Op Eff)(k : Ret Eff op -> (IO A)) -> IO A
+{-
+fold : (A → B) → ((op : Op Δ) (k : Ret Δ op → B) → B) → Free Δ A → B
+fold gen alg (pure x)       = gen x
+fold gen alg (impure op k)  = alg op (fold gen alg ∘ k)
+-}
+
+          --  ((op : Op Eff)(k : Ret Eff op -> (IO ⊤)) -> IO ⊤)
+foldTerm : (A -> IO ⊤)
+            -> Alg2 Eff ⊤
+            -> Free Eff A -> IO ⊤
+foldTerm pur impur (pure x)      = pur x
+foldTerm pur impur (impure op k) = impur op \ x -> foldTerm pur impur (k x)
+
+execAlgebra : Alg2 Teletype ⊤
+execAlgebra (putChar ch) k = putCharIO ch >>> k tt
+execAlgebra getChar k = getCharIO >>>= k
+
+exec : Free Teletype ⊤ -> IO ⊤
+exec = foldTerm return execAlgebra
+
+putStrLn : String -> Free Teletype ⊤
+putStrLn x = f (primStringToList x) where
+  f : List Char ->  Free Teletype ⊤
+  f [] = impure (putChar '\n') \ _ -> pure tt
+  f (x ∷ str) = impure (putChar x) \ _ -> f str
+
+
+
+program : Free Teletype ⊤
+program =
+          impure (putChar 'H')              \ _ ->
+          impure (putChar 'E')              \ _ ->
+          impure (putChar 'L')              \ _ ->
+          impure (putChar 'L')              \ _ ->
+          impure (putChar 'L')              \ _ ->
+          impure (putChar 'O')              \ _ ->
+          impure (putChar '\n')             \ _ ->
+          impure getChar                    \ a ->
+          impure getChar                    \ b ->
+          impure getChar                    \ c ->
+          impure getChar                    \ d ->
+          impure (putChar 'a')              \ _ ->
+          impure (putChar '=')              \ _ ->
+          impure (putChar a)                \ _ ->
+          impure (putChar '\n')             \ _ ->
+          impure (putChar 'b')              \ _ ->
+          impure (putChar '=')              \ _ ->
+          impure (putChar b)                \ _ ->
+          impure (putChar '\n')             \ _ ->
+          impure (putChar 'c')              \ _ ->
+          impure (putChar '=')              \ _ ->
+          impure (putChar c)                \ _ ->
+          impure (putChar '\n')             \ _ ->
+          impure (putChar 'd')              \ _ ->
+          impure (putChar '=')              \ _ ->
+          impure (putChar d)                \ _ ->
+          impure (putChar '\n')             \ _ ->
+          impure (putChar 'E')              \ _ ->
+          impure (putChar 'N')              \ _ ->
+          impure (putChar 'D')              \ _ ->
+          impure (putChar '\n')             \ _ ->
+          pure tt
+
+
+main : IO ⊤
+main = exec program
+
+{-
 program : Free (coProduct Teletype Nil) ⊤
 program = do
     putStrLn "Put"
@@ -139,10 +218,10 @@ program = do
     h2 <- `getChar
     `putChar h2
     putStrLn "Put3"
-{-
 un2 : Free Nil A -> IO A
 un2 (pure x) = {!!}
--}
+
 
 main : IO ⊤
 main = un ((exec hTeletype program) tt)
+-}
