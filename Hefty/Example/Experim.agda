@@ -70,40 +70,40 @@ a >>> b = a >>>= λ _ → b
 Alg2 : (Eff : Effect) -> (A : Set) -> Set
 Alg2 Eff A = (op : Op Eff)(k : Ret Eff op -> (IO A)) -> IO A
 
+          --Alg2 :: ((op : Op Eff)(k : Ret Eff op -> (IO ⊤)) -> IO ⊤)
+foldTerm1 : (A -> IO B)
+            -> Alg Eff (IO B)
+            -> Free Eff A -> IO B
+foldTerm1 pur impur (pure x)      = pur x
+foldTerm1 pur impur (impure op k) = impur op \ x -> foldTerm1 pur impur (k x)
+
+foldTerm : (A -> IO B)
+            -> Alg Eff (IO B)
+            -> Free Eff A -> IO B
+foldTerm = fold
 
 record Handler2 (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
     field ret : A -> P -> Free Continue B
           hdl : Alg2 E (P -> Free Continue B)
 open Handler2 public
 
---Handler2 == Handler3
-
-record Handler3 (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
-    field ret : A -> P -> Free Continue B
-          hdl : Alg E (IO (P -> Free Continue B))
-open Handler3 public
-
-record Handler4 (A : Set) (E : Effect) (P : Set) (B : Set) (Continue : Effect) : Set₁ where
-    field ret : A -> IO(P -> Free Continue B)
-          hdl : Alg E (IO (P -> Free Continue B))
-open Handler4 public
-
-
 
 
 -- like in Data Type La Carte
+{-
 exec :
             {A B P : Set}
             -> {E Here There : Effect}
             -> {{ EffectStorage E Here There  }}
-            -> Handler4 A Here P B There
+            -> Handler2 A Here P B There
             -> Free E A
-            -> IO (P -> Free There B)
-exec {A} {B} {P} {E} {Here} {There} h eff =
- fold (h .ret) func (to-front eff) where
-    func : Alg (coProduct Here There) (IO (P -> Free There B))
-    func  (injl op) k = h .hdl op k
-    func (injr op) k = {!!}
+            -> (P -> Free There B)
+exec {A} {B} {P} {E} {Here} {There} h eff = {!!}
+    fold (ret h) func (to-front eff) where
+    func : Alg (coProduct Here There) (P -> Free There B)
+    func  (injl op) k p = hdl h op k p
+    func (injr op) k p = impure op (λ x → k x p)
+-}
 
 hTeletype : {Eff : Effect} -> Handler2 A Teletype ⊤ ( IO ⊤ ) Eff
 hTeletype .ret a x = pure (return x)
@@ -183,11 +183,12 @@ program = do
     h2 <- `getChar
     `putChar h2
     putStrLn "Put3"
+{-
+un2 : Free Nil A -> IO A
+un2 (pure x) = {!!}
+-}
 
 {-
-un2 : IO (Free Nil A) -> IO A
-un2 = {!!}
-
 main1 : IO ⊤
 main1 = un ((exec hTeletype program) tt)
 -}
