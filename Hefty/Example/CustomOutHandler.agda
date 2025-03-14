@@ -37,5 +37,8 @@ hdl hOutIO (out s) k p = do
     pure (x , (putStr s >>> s'))
   where open import Effect.Core.Free using (_>>=_; _>>_)
 
+
+
 main : IO ⊤
 main = snd (un ((givenHandle hOutIO program) tt))
+

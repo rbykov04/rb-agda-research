@@ -11,8 +11,9 @@ open import Agda.Primitive
 
 open import Mystdlib.Mystdlib
 
-open import Effect.Core.Free hiding (Handler)
+open import Effect.Core.Free
 open import Effect.Free.Output
+open import Effect.Free.Throw
 open import Effect.Free.Nil
 
 private
@@ -33,7 +34,6 @@ Teletype .Op              = TeletypeOp
 Teletype .Ret (putChar x) = ⊤
 Teletype .Ret getChar     = Char
 
-
 `putChar :
       {E There : Effect}
      -> {{ EffectStorage E Teletype There }}
@@ -46,6 +46,7 @@ Teletype .Ret getChar     = Char
      -> {{ EffectStorage E Teletype There }}
      -> Free E Char
 `getChar {{ w }}  = impure (inj-insert-left getChar ) (λ x -> pure (proj-ret-left {{w}} x))
+
 
 infixl 1 _>>>=_
 postulate
@@ -91,31 +92,17 @@ open Handler4 public
 
 
 
--- like in Data Type La Carte
-exec :
-            {A B P : Set}
-            -> {E Here There : Effect}
-            -> {{ EffectStorage E Here There  }}
-            -> Handler4 A Here P B There
-            -> Free E A
-            -> IO (P -> Free There B)
-exec {A} {B} {P} {E} {Here} {There} h eff =
- fold (h .ret) func (to-front eff) where
-    func : Alg (coProduct Here There) (IO (P -> Free There B))
-    func  (injl op) k = h .hdl op k
-    func (injr op) k = {!!}
-
 hTeletype : {Eff : Effect} -> Handler2 A Teletype ⊤ ( IO ⊤ ) Eff
 hTeletype .ret a x = pure (return x)
 hTeletype .hdl (putChar ch) k = putCharIO ch >>> k tt
 hTeletype .hdl getChar k      = getCharIO >>>= k
 
 
-execAlgebra : Alg Teletype (IO ⊤)
+execAlgebra : Alg Teletype (IO A)
 execAlgebra (putChar ch) k = putCharIO ch >>> k tt
 execAlgebra getChar k      = getCharIO >>>= k
 
-exec1 : Free Teletype ⊤ -> IO ⊤
+exec1 : Free Teletype A -> IO A
 exec1 = fold return execAlgebra
 
 putStrLn1 : String -> Free Teletype ⊤
@@ -160,34 +147,45 @@ program1 =
           pure tt
 
 
-main : IO ⊤
-main = exec1 program1
+``putChar : {Eff : Effect} -> Char -> Free (coProduct Eff Teletype) ⊤
+``putChar ch = impure (injr (putChar ch)) \ x -> pure x
 
-putStrLn : String -> Free (coProduct Teletype Nil) ⊤
+``getChar : {Eff : Effect} -> Free (coProduct Eff Teletype) Char
+``getChar = impure (injr (getChar)) \ x -> pure x
+
+putStrLn : {Eff : Effect} -> String -> Free (coProduct Eff Teletype) ⊤
 putStrLn x = f (primStringToList x) where
-  f : List Char ->  Free (coProduct Teletype Nil) ⊤
-  f [] = `putChar '\n'
+  f : List Char ->  Free (coProduct Eff Teletype) ⊤
+  f [] =   ``putChar '\n'
   f (x ∷ str) = do
-    `putChar x
+    ``putChar x
     f str
 
 
-program : Free (coProduct Teletype Nil) ⊤
-program = do
-    putStrLn "Put"
-    h1 <- `getChar
-    `putChar h1
-    `putChar h1
-    `putChar h1
-    putStrLn "Put2"
-    h2 <- `getChar
-    `putChar h2
-    putStrLn "Put3"
-
-{-
-un2 : IO (Free Nil A) -> IO A
-un2 = {!!}
 
 main1 : IO ⊤
-main1 = un ((exec hTeletype program) tt)
--}
+main1 = exec1 program1
+
+
+program : Free (coProduct Output Teletype) ⊤
+program = do
+    putStrLn "Put"
+    h1 <- ``getChar
+    ``putChar h1
+    ``putChar h1
+    ``putChar h1
+    putStrLn "Put2"
+   -- `throw
+    h2 <- ``getChar
+    ``putChar h2
+    putStrLn "Put3"
+
+
+hOut : Handler A Output ⊤ ⊤ Eff
+ret hOut x _ = pure tt
+hdl hOut (out s) k p = do  k tt p; pure tt
+  where open import Effect.Core.Free using (_>>=_; _>>_)
+
+
+main : IO ⊤
+main = exec1 ((givenHandle hOut program) tt)
