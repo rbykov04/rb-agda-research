@@ -15,6 +15,7 @@ open import Effect.Core.Free
 open import Effect.Free.Output
 open import Effect.Free.Throw
 open import Effect.Free.Nil
+open import Effect.Free.State Char
 
 private
   variable
@@ -167,25 +168,26 @@ main1 : IO ⊤
 main1 = exec1 program1
 
 
-program : Free (coProduct Output Teletype) ⊤
+program : Free (coProduct State Teletype) ⊤
 program = do
-    putStrLn "Put"
+    putStrLn "Check def"
+    def <- `get
+    ``putChar def
+    `put 'a'
+    a <- `get
+    putStrLn "\nCheck State"
+    ``putChar a
+    putStrLn "\n"
     h1 <- ``getChar
     ``putChar h1
     ``putChar h1
     ``putChar h1
     putStrLn "Put2"
-   -- `throw
     h2 <- ``getChar
     ``putChar h2
     putStrLn "Put3"
 
 
-hOut : Handler A Output ⊤ ⊤ Eff
-ret hOut x _ = pure tt
-hdl hOut (out s) k p = do  k tt p; pure tt
-  where open import Effect.Core.Free using (_>>=_; _>>_)
-
 
 main : IO ⊤
-main = exec1 ((givenHandle hOut program) tt)
+main = exec1 (givenHandle hSt program 'z') >>>= \ x -> return tt
