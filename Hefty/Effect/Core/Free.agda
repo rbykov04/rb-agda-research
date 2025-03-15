@@ -45,8 +45,9 @@ coProduct : Effect -> Effect -> Effect
 Op  (coProduct a b) = Sum (Op a)  (Op b)
 Ret (coProduct a b) x = elim (Ret a) (Ret b) x
 
-{-
--}
+infixr 12 _|>_
+_|>_ : Effect -> Effect -> Effect
+a |> b  = coProduct a b
 
 
 
