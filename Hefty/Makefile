@@ -3,6 +3,8 @@
 run: CustomOutHandler
 	./CustomOutHandler
 
+IO: Example/IO.agda
+	agda  -i. --compile --library=standard-library-2.2 Example/IO.agda
 
 Teletype: Example/Teletype.agda
 	agda  -i. --compile --library=standard-library-2.2 Example/Teletype.agda
@@ -21,4 +23,5 @@ clean:
 	rm -rf Effect/Hefty/*.agdai
 	rm -f Hefty
 	rm -f Teletype
+	rm -f IO
 	rm -f CustomOutHandler
