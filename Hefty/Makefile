@@ -1,15 +1,30 @@
 .PHONY: run clean
 
 #exports
-run: Reproduce
+run: IO
+	./IO
+
+runRep: Reproduce
 	./Reproduce
 
-Reproduce: Example/Reproduce.agda
-	agda  -i. --compile --library=standard-library-2.2 Example/Reproduce.agda
+Reproduce: MAlonzo
+	ghc -O -o Reproduce \
+		-Werror -i. \
+		-main-is MAlonzo.Code.Example.Reproduce \
+		MAlonzo/Code/Example/Reproduce.hs \
+		--make -fwarn-incomplete-patterns
+
+
+
+
+MAlonzo: Example/Reproduce.agda
+	agda  -i. --ghc-dont-call-ghc --compile --library=standard-library-2.2 Example/Reproduce.agda
 
 run1: build/jAgda.Example.IO.js
 	NODE_PATH=./build node build/jAgda.Example.IO.js
 
+IO: Example/IO.agda
+	agda  -i. --compile  --library=standard-library-2.2 Example/IO.agda
 
 build/jAgda.Example.IO.js: Example/IO.agda
 	agda  -i. --js --compile-dir=build --library=standard-library-2.2 Example/IO.agda
