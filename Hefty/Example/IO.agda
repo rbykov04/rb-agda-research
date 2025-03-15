@@ -72,13 +72,13 @@ infixl 1 _>>>=_
 postulate
     putCharIO : Char → IO ⊤
     getCharIO : IO Char
-    return : A → IO A
+    return' : A → IO A
     _>>>=_  : IO A → (A → IO B) → IO B
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# FOREIGN GHC import qualified System.IO as SIO #-}
 {-# COMPILE GHC putCharIO = (SIO.hPutChar SIO.stderr) #-}
 {-# COMPILE GHC getCharIO = SIO.getChar #-}
-{-# COMPILE GHC return = \_ _ -> return    #-}
+{-# COMPILE GHC return' = \_ _ -> return    #-}
 {-# COMPILE GHC _>>>=_  = \_ _ _ _ -> (>>=) #-}
 
 infixl 1 _>>>_
@@ -117,7 +117,7 @@ execAlgebra2 : Alg2 IOEF (IO A)
 execAlgebra2 (liftIO ty f) k = f >>>= k
 
 exec2 : Free2 IOEF A -> IO A
-exec2 = fold2 return execAlgebra2
+exec2 = fold2 return' execAlgebra2
 main : IO ⊤
 main = exec2 program1
 
