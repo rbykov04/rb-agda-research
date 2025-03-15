@@ -97,6 +97,30 @@ alg eCatch (catch t) fork k = do
   where open import Free using (_>>=_; _>>_)
 ```
 
+# 6 
+I hacked agda compiler
+
+```
+instance Pretty HS.DataOrNew where
+  pretty HS.DataType = "data"
+  --pretty HS.NewType  = "newtype"
+  pretty HS.NewType  = "data"
+```
+
+```
+  /home/rbykov/dev/opensource/agda/src/full/Agda/Compiler/MAlonzo:
+  -rw-rw-r-- 1 rbykov rbykov 2,8K мар  7 16:22 Coerce.hs
+  -rw-rw-r-- 1 rbykov rbykov  48K мар  7 16:22 Compiler.hs
+  -rw-rw-r-- 1 rbykov rbykov 2,3K мар  7 16:22 Encode.hs
+  -rw-rw-r-- 1 rbykov rbykov 9,0K мар  7 16:22 HaskellTypes.hs
+  -rw-rw-r-- 1 rbykov rbykov  13K мар  7 16:22 Misc.hs
+  -rw-rw-r-- 1 rbykov rbykov 9,0K мар  7 16:22 Pragmas.hs
+  -rw-rw-r-- 1 rbykov rbykov 7,9K мар 15 20:15 Pretty.hs <---------------- here
+  -rw-rw-r-- 1 rbykov rbykov  15K мар  7 16:22 Primitives.hs
+  -rw-rw-r-- 1 rbykov rbykov 3,0K мар  7 16:22 Strict.hs
+
+```
+
 
 [^1]: Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects
 https://dl.acm.org/doi/10.1145/3571255
