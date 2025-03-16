@@ -537,7 +537,8 @@ hFilesystem3 .ret _ _ = pure tt
 hFilesystem3 .hdl (ReadFile path) k _            = impure (liftIO String (readFileIO path)) \ str -> (k str tt )
 hFilesystem3 .hdl (WriteFile path text) k _      = impure (liftIO ⊤ (writeFileIO path text)) λ x → k tt tt
 
-putStrLn2 : {E There : Effect2}
+putStrLn2 :
+        {E There : Effect2}
           -> {{ EffectStorage2 E Teletype There }}
           -> String
           -> Free2 E ⊤
@@ -556,11 +557,23 @@ program3 = do
   file <- readFile "test.txt"
   putStrLn2 file
 
-
 main4 : IO ⊤
-main4 = exec2 (givenHandle2 hTeletype
-            (givenHandle2 hFilesystem program3 tt) tt) >>>= \ x -> return tt
+main4 = exec2 (givenHandle2 hFilesystem3
+            (givenHandle2 hTeletype2 program3 tt) tt) >>>= \ x -> return tt
+
+cat : {E There1 There2 : Effect2}
+      -> {{ EffectStorage2 E Teletype   There1 }}
+      -> {{ EffectStorage2 E Filesystem There2 }}
+      -> String
+      -> Free2 E ⊤
+cat file = do
+  file <- readFile file
+  putStrLn2 file
+
+program4 : Free2 (Filesystem |2> Teletype |2> IOEF) ⊤
+program4 = do
+  cat "test.txt"
 
 main : IO ⊤
-main = exec2 (givenHandle2 hFilesystem3
-            (givenHandle2 hTeletype2 program3 tt) tt) >>>= \ x -> return tt
+main = exec2 (givenHandle2 hTeletype
+            (givenHandle2 hFilesystem program4 tt) tt) >>>= \ x -> return tt
