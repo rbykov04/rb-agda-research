@@ -13,10 +13,6 @@ open import Agda.Primitive
 open import Mystdlib.Mystdlib
 
 open import Effect.Core.Free hiding ( _>>=_ ; _>>_ )
---open import Effect.Free.Output
---open import Effect.Free.Throw
---open import Effect.Free.Nil
---open import Effect.Free.State Char
 
 private
   variable
@@ -71,16 +67,19 @@ infixr 12 _|2>_
 _|2>_ : {a b : Level} -> Effect2 {a} {b} -> Effect2 {a} {b} -> Effect2 {a} {b}
 _|2>_ = coProduct2
 
-infixl 1 _>>>=_
 postulate
-    putCharIO : Char → IO ⊤
+    putCharIO : Char -> IO ⊤
     getCharIO : IO Char
+    readFileIO  : String -> IO String
+    writeFileIO : String -> String -> IO ⊤
     return : A → IO A
     _>>>=_  : IO A → (A → IO B) → IO B
 {-# FOREIGN GHC import qualified Data.Text as T #-}
 {-# FOREIGN GHC import qualified System.IO as SIO #-}
 {-# COMPILE GHC putCharIO = (SIO.hPutChar SIO.stderr) #-}
 {-# COMPILE GHC getCharIO = SIO.getChar #-}
+{-# COMPILE GHC writeFileIO = \ path text -> writeFile (T.unpack path) (T.unpack text) #-}
+{-# COMPILE GHC readFileIO = \ path ->  readFile (T.unpack path) >>= \ text -> return (T.pack text) #-}
 {-# COMPILE GHC return = \_ _ -> return    #-}
 {-# COMPILE GHC _>>>=_  = \_ _ _ _ -> (>>=) #-}
 
@@ -409,5 +408,123 @@ program = do
     `liftIO (putCharIO h2)
     putStrLn "Put3"
 
+main2 : IO ⊤
+main2 = exec2 (givenHandle2 hSt program 'z') >>>= \ x -> return tt
+
+data TeletypeOp : Set1 where
+  putChar  : Char   -> TeletypeOp
+  getChar  : TeletypeOp
+
+Teletype : Effect2
+Teletype .Op              = TeletypeOp
+Teletype .Ret (putChar x) = ⊤
+Teletype .Ret getChar     = Char
+
+hTeletype : Handler2 A Teletype ⊤ ( ⊤ ) IOEF
+hTeletype .ret _ _ = pure tt
+hTeletype .hdl (putChar ch) k _ = impure (liftIO ⊤ (putCharIO ch)) (k tt )
+hTeletype .hdl getChar k _      = impure (liftIO Char (getCharIO)) \ ch -> k ch tt
+
+
+`putChar :
+      {E There : Effect2}
+     -> {{ EffectStorage2 E Teletype There}}
+     -> Char
+     -> Free2 E ⊤
+`putChar {{ w }} ch = impure (inj-insert-left2 (putChar ch)) (λ x -> pure (proj-ret-left2 {{w}} x))
+
+`getChar :
+      {E There : Effect2}
+     -> {{ EffectStorage2 E Teletype There}}
+     -> Free2 E Char
+`getChar {{ w }} = impure (inj-insert-left2 getChar) (λ x -> pure (proj-ret-left2 {{w}} x))
+
+
+
+
+program2 : Free2 (coProduct2 Teletype IOEF) ⊤
+program2 = do
+    `liftIO (putCharIO 'h')
+    `liftIO (putCharIO 'e')
+    `liftIO (putCharIO 'l')
+    `liftIO (putCharIO 'l')
+    `liftIO (putCharIO 'l')
+    `liftIO (putCharIO '0')
+    `liftIO (putCharIO '\n')
+    `putChar 'h'
+    `putChar 'e'
+    `putChar 'l'
+    `putChar 'l'
+    `putChar 'o'
+    `putChar '\n'
+    ch <- `getChar
+    ch2 <- `getChar
+    `liftIO (putCharIO ch)
+    `liftIO (putCharIO ch)
+    `liftIO (putCharIO ch2)
+    `liftIO (putCharIO ch2)
+
+main3 : IO ⊤
+main3 = exec2 (givenHandle2 hTeletype program2 tt) >>>= \ x -> return tt
+
+
+data FileSystemOp : Set1 where
+  ReadFile   : String -> FileSystemOp
+  WriteFile  : String -> String -> FileSystemOp
+
+Filesystem : Effect2
+Filesystem .Op                        = FileSystemOp
+Filesystem .Ret (ReadFile file)       = String
+Filesystem .Ret (WriteFile file text) = ⊤
+
+
+
+readFile :
+      {E There : Effect2}
+     -> {{ EffectStorage2 E Filesystem There}}
+     -> String
+     -> Free2 E String
+readFile {{ w }} path = impure (inj-insert-left2 (ReadFile path)) (λ x -> pure (proj-ret-left2 {{w}} x))
+
+writeFile :
+      {E There : Effect2}
+     -> {{ EffectStorage2 E Filesystem There}}
+     -> String
+     -> String
+     -> Free2 E ⊤
+writeFile {{ w }} path text = impure (inj-insert-left2 (WriteFile path text)) (λ x -> pure (proj-ret-left2 {{w}} x))
+
+putStrLn2 : {E There : Effect2}
+          -> {{ EffectStorage2 E Teletype There }}
+          -> String
+          -> Free2 E ⊤
+putStrLn2 x = f (primStringToList x) where
+  f : List Char
+    -> {E There : Effect2}
+    -> {{ EffectStorage2 E Teletype There}}
+    -> Free2 E ⊤
+  f [] =  `putChar '\n'
+  f (x ∷ str) = do
+    `putChar x
+    f str
+
+
+
+program3 : Free2 (Filesystem |2> Teletype |2> IOEF) ⊤
+program3 = do
+  file <- readFile "test.txt"
+  putStrLn2 file
+
+
+hFilesystem :  {Eff : Effect2} -> Handler2 A Filesystem ⊤ ( ⊤ ) (Eff |2> IOEF)
+hFilesystem .ret _ _ = pure tt
+hFilesystem .hdl (ReadFile path) k _       =
+  impure (injr (liftIO String (readFileIO path))) \ ch -> k ch tt
+hFilesystem .hdl (WriteFile path text) k _ =
+  impure (injr (liftIO ⊤ (writeFileIO path text))) (k tt )
+
+
 main : IO ⊤
-main = exec2 (givenHandle2 hSt program 'z') >>>= \ x -> return tt
+
+main = exec2 (givenHandle2 hTeletype
+            (givenHandle2 hFilesystem program3 tt) tt) >>>= \ x -> return tt
