@@ -355,7 +355,7 @@ putStrLn x = f (primStringToList x) where
     -> Free2 E ⊤
   f [] =  `liftIO (putCharIO '\n') -- `putChar '\n'
   f (x ∷ str) = do
-    x <- `liftIO (putCharIO x) -- `putChar x
+    `liftIO (putCharIO x) -- `putChar x
     f str
 
 data StateOp : Set1 where
@@ -390,23 +390,23 @@ program : Free2 (coProduct2 State IOEF) ⊤
 program = do
     putStrLn "Check def"
     def <- `get
-    _   <- `liftIO (putCharIO def)
+    `liftIO (putCharIO def)
     `put 'a'
     a   <- `get
     putStrLn "\nCheck State"
-    _   <- `liftIO (putCharIO a)
+    `liftIO (putCharIO a)
     putStrLn "\n"
     h1  <- `liftIO (getCharIO)
-    _   <- `liftIO (putCharIO h1)
-    _   <- `liftIO (putCharIO h1)
-    _   <- `liftIO (putCharIO h1)
-    _   <- `liftIO (putCharIO h1)
+    `liftIO (putCharIO h1)
+    `liftIO (putCharIO h1)
+    `liftIO (putCharIO h1)
+    `liftIO (putCharIO h1)
     putStrLn "Put2"
     h2  <- `liftIO (getCharIO)
-    _   <- `liftIO (putCharIO h2)
-    _   <- `liftIO (putCharIO h2)
-    _   <- `liftIO (putCharIO h2)
-    _   <- `liftIO (putCharIO h2)
+    `liftIO (putCharIO h2)
+    `liftIO (putCharIO h2)
+    `liftIO (putCharIO h2)
+    `liftIO (putCharIO h2)
     putStrLn "Put3"
 
 main : IO ⊤
