@@ -494,6 +494,16 @@ writeFile :
      -> Free2 E ⊤
 writeFile {{ w }} path text = impure (inj-insert-left2 (WriteFile path text)) (λ x -> pure (proj-ret-left2 {{w}} x))
 
+hFilesystem :  {Eff : Effect2} -> Handler2 A Filesystem ⊤ ( ⊤ ) (Eff |2> IOEF)
+hFilesystem .ret _ _ = pure tt
+hFilesystem .hdl (ReadFile path) k _       =
+  impure (injr (liftIO String (readFileIO path))) \ ch -> k ch tt
+hFilesystem .hdl (WriteFile path text) k _ =
+  impure (injr (liftIO ⊤ (writeFileIO path text))) (k tt )
+
+
+
+
 putStrLn2 : {E There : Effect2}
           -> {{ EffectStorage2 E Teletype There }}
           -> String
@@ -508,20 +518,10 @@ putStrLn2 x = f (primStringToList x) where
     `putChar x
     f str
 
-
-
 program3 : Free2 (Filesystem |2> Teletype |2> IOEF) ⊤
 program3 = do
   file <- readFile "test.txt"
   putStrLn2 file
-
-
-hFilesystem :  {Eff : Effect2} -> Handler2 A Filesystem ⊤ ( ⊤ ) (Eff |2> IOEF)
-hFilesystem .ret _ _ = pure tt
-hFilesystem .hdl (ReadFile path) k _       =
-  impure (injr (liftIO String (readFileIO path))) \ ch -> k ch tt
-hFilesystem .hdl (WriteFile path text) k _ =
-  impure (injr (liftIO ⊤ (writeFileIO path text))) (k tt )
 
 
 main : IO ⊤
