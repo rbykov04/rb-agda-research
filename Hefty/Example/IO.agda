@@ -425,6 +425,21 @@ hTeletype .ret _ _ = pure tt
 hTeletype .hdl (putChar ch) k _ = impure (liftIO ⊤ (putCharIO ch)) (k tt )
 hTeletype .hdl getChar k _      = impure (liftIO Char (getCharIO)) \ ch -> k ch tt
 
+hTeletype2 :  {E Here : Effect2}
+            -> {{ EffectStorage2 E Here IOEF}}
+            -> Handler2 A Teletype ⊤ ( ⊤ ) E
+hTeletype2 .ret _ _ = pure tt
+hTeletype2 {{w}} .hdl (putChar ch) k oo       =
+  impure
+    (inj-insert-right2 {{w}}(liftIO ⊤ (putCharIO ch)))
+    \ ch -> k (proj-ret-right2 {{w}} ch) tt
+hTeletype2 {{w}} .hdl getChar k _ =
+  impure
+    (inj-insert-right2  (liftIO Char getCharIO ))
+    \ x -> k (proj-ret-right2 {{w}} x ) tt
+
+
+
 
 `putChar :
       {E There : Effect2}
@@ -492,17 +507,29 @@ writeFile :
      -> String
      -> String
      -> Free2 E ⊤
-writeFile {{ w }} path text = impure (inj-insert-left2 (WriteFile path text)) (λ x -> pure (proj-ret-left2 {{w}} x))
+writeFile {{ w }} path text =
+  impure (inj-insert-left2 (WriteFile path text))
+  (λ x -> pure (proj-ret-left2 {{w}} x))
 
-hFilesystem :  {Eff : Effect2} -> Handler2 A Filesystem ⊤ ( ⊤ ) (Eff |2> IOEF)
-hFilesystem .ret _ _ = pure tt
-hFilesystem .hdl (ReadFile path) k _       =
+hFilesystem2 :  {Eff : Effect2} -> Handler2 A Filesystem ⊤ ( ⊤ ) (Eff |2> IOEF)
+hFilesystem2 .ret _ _ = pure tt
+hFilesystem2 .hdl (ReadFile path) k _       =
   impure (injr (liftIO String (readFileIO path))) \ ch -> k ch tt
-hFilesystem .hdl (WriteFile path text) k _ =
+hFilesystem2 .hdl (WriteFile path text) k _ =
   impure (injr (liftIO ⊤ (writeFileIO path text))) (k tt )
 
-
-
+hFilesystem :  {E Here : Effect2}
+            -> {{ EffectStorage2 E Here IOEF}}
+            -> Handler2 A Filesystem ⊤ ( ⊤ ) E
+hFilesystem .ret _ _ = pure tt
+hFilesystem {{w}} .hdl (ReadFile path) k oo       =
+  impure
+    (inj-insert-right2 {{w}}(liftIO String (readFileIO path)))
+    \ ch -> k (proj-ret-right2 {{w}} ch) tt
+hFilesystem {{w}} .hdl (WriteFile path text) k _ =
+  impure
+    (inj-insert-right2  (liftIO ⊤ (writeFileIO path text)))
+    \ x -> k (proj-ret-right2 {{w}} x ) tt
 
 putStrLn2 : {E There : Effect2}
           -> {{ EffectStorage2 E Teletype There }}
@@ -525,6 +552,10 @@ program3 = do
 
 
 main : IO ⊤
-
 main = exec2 (givenHandle2 hTeletype
             (givenHandle2 hFilesystem program3 tt) tt) >>>= \ x -> return tt
+{-
+main4 : IO ⊤
+main4 = exec2 (givenHandle2 {!hFilesystem!}
+            (givenHandle2 hTeletype2 program3 tt) tt) >>>= \ x -> return tt
+-}
