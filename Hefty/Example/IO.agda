@@ -531,6 +531,12 @@ hFilesystem {{w}} .hdl (WriteFile path text) k _ =
     (inj-insert-right2  (liftIO ⊤ (writeFileIO path text)))
     \ x -> k (proj-ret-right2 {{w}} x ) tt
 
+
+hFilesystem3 : Handler2 A Filesystem ⊤ ( ⊤ ) IOEF
+hFilesystem3 .ret _ _ = pure tt
+hFilesystem3 .hdl (ReadFile path) k _            = impure (liftIO String (readFileIO path)) \ str -> (k str tt )
+hFilesystem3 .hdl (WriteFile path text) k _      = impure (liftIO ⊤ (writeFileIO path text)) λ x → k tt tt
+
 putStrLn2 : {E There : Effect2}
           -> {{ EffectStorage2 E Teletype There }}
           -> String
@@ -551,11 +557,10 @@ program3 = do
   putStrLn2 file
 
 
-main : IO ⊤
-main = exec2 (givenHandle2 hTeletype
-            (givenHandle2 hFilesystem program3 tt) tt) >>>= \ x -> return tt
-{-
 main4 : IO ⊤
-main4 = exec2 (givenHandle2 {!hFilesystem!}
+main4 = exec2 (givenHandle2 hTeletype
+            (givenHandle2 hFilesystem program3 tt) tt) >>>= \ x -> return tt
+
+main : IO ⊤
+main = exec2 (givenHandle2 hFilesystem3
             (givenHandle2 hTeletype2 program3 tt) tt) >>>= \ x -> return tt
--}
