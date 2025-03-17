@@ -59,11 +59,11 @@ program1 = impure (liftIO Char getCharIO) \ x ->
 main1 : IO ⊤
 main1 = exec2 program1
 
-putStrLn : {E Here : Effect2}
+putStrLn2 : {E Here : Effect2}
           -> {{ EffectStorage2 E Here IOEF }}
           -> String
           -> Free2 E ⊤
-putStrLn x = f (primStringToList x) where
+putStrLn2 x = f (primStringToList x) where
   f : List Char
     -> {E Here : Effect2}
     -> {{ EffectStorage2 E Here IOEF }}
@@ -75,26 +75,26 @@ putStrLn x = f (primStringToList x) where
 
 program : Free2 (coProduct2 State IOEF) ⊤
 program = do
-    putStrLn "Check def"
+    putStrLn2 "Check def"
     def <- `get
     `liftIO (putCharIO def)
     `put 'a'
     a   <- `get
-    putStrLn "\nCheck State"
+    putStrLn2 "\nCheck State"
     `liftIO (putCharIO a)
-    putStrLn "\n"
+    putStrLn2 "\n"
     h1  <- `liftIO (getCharIO)
     `liftIO (putCharIO h1)
     `liftIO (putCharIO h1)
     `liftIO (putCharIO h1)
     `liftIO (putCharIO h1)
-    putStrLn "Put2"
+    putStrLn2 "Put2"
     h2  <- `liftIO (getCharIO)
     `liftIO (putCharIO h2)
     `liftIO (putCharIO h2)
     `liftIO (putCharIO h2)
     `liftIO (putCharIO h2)
-    putStrLn "Put3"
+    putStrLn2 "Put3"
 
 main2 : IO ⊤
 main2 = exec2 (givenHandle2 hSt program 'z') >>>= \ x -> return tt
@@ -127,25 +127,10 @@ main3 : IO ⊤
 main3 = exec2 (givenHandle2 hTeletype program2 tt) >>>= \ x -> return tt
 
 
-putStrLn2 :
-        {E There : Effect2}
-          -> {{ EffectStorage2 E Teletype There }}
-          -> String
-          -> Free2 E ⊤
-putStrLn2 x = f (primStringToList x) where
-  f : List Char
-    -> {E There : Effect2}
-    -> {{ EffectStorage2 E Teletype There}}
-    -> Free2 E ⊤
-  f [] =  `putChar '\n'
-  f (x ∷ str) = do
-    `putChar x
-    f str
-
 program3 : Free2 (Filesystem |2> Teletype |2> IOEF) ⊤
 program3 = do
   file <- readFile "test.txt"
-  putStrLn2 file
+  putStrLn file
 
 main4 : IO ⊤
 main4 = exec2 (givenHandle2 hFilesystem3
@@ -158,7 +143,7 @@ cat : {E There1 There2 : Effect2}
       -> Free2 E ⊤
 cat file = do
   file <- readFile file
-  putStrLn2 file
+  putStrLn file
 
 program4 : Free2 (Filesystem |2> Teletype |2> IOEF) ⊤
 program4 = do

@@ -77,3 +77,19 @@ hTeletype2 {{w}} .hdl getChar k _ =
      -> {{ EffectStorage2 E Teletype There}}
      -> Free2 E Char
 `getChar {{ w }} = impure (inj-insert-left2 getChar) (λ x -> pure (proj-ret-left2 {{w}} x))
+
+putStrLn :
+        {E There : Effect2}
+          -> {{ EffectStorage2 E Teletype There }}
+          -> String
+          -> Free2 E ⊤
+putStrLn x = f (primStringToList x) where
+  f : List Char
+    -> {E There : Effect2}
+    -> {{ EffectStorage2 E Teletype There}}
+    -> Free2 E ⊤
+  f [] =  `putChar '\n'
+  f (x ∷ str) = do
+    `putChar x
+    f str
+    where open import Effect.Core.Free2 using (_>>=_; _>>_)
