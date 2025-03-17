@@ -46,3 +46,11 @@ execAlgebra2 (liftIO ty f) k = f >>= k
 
 exec2 : Free2 IOEF A -> IO A
 exec2 = fold2 return execAlgebra2
+
+`liftIO :
+      {E Here : Effect2 }
+     -> {{ EffectStorage2 E Here IOEF}}
+     -> {A : Set}
+     -> (f : IO A)
+     -> Free2 E A
+`liftIO {{ w }} {A} f = impure (inj-insert-right2 (liftIO A f)) (\ x -> pure (proj-ret-right2 {{w}} x))
