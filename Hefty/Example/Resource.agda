@@ -24,7 +24,7 @@ open import Mystdlib.Universe
 
 
 open import Effect.Core.Free hiding (_>>=_; _>>_)
-open import Effect.Core.Hefty
+open import Effect.Core.Hefty  hiding (_>>=_; _>>_)
 open import Effect.Free.Output
 open import Effect.Free.Nil
 open import Effect.Free.State String
@@ -50,13 +50,20 @@ data Type : Set where
   num   : Type
 
 data ResourceOp {{ u : Universe }} : Set where
-    bracket : Ty -> Ty -> Ty ->  ResourceOp
+    bracket : Ty ->  ResourceOp
 
--- How does it work?
+data ResourceBranch : Set where
+  acquire   : ResourceBranch
+  release   : ResourceBranch
+  inBetween : ResourceBranch
+
+
+
 Resource : {{ u : Universe }} -> EffectH
 Resource .OpH = ResourceOp
-Resource .ForkH = {!!}
-Resource .RetH (bracket acquire release between) = {!!}
+Resource .ForkH x .Op            = ResourceBranch
+Resource .ForkH (bracket t) .Ret = \ _ → [[ t ]]
+Resource .RetH  (bracket t)      = [[ t ]]
 
 `bracket   : {H H' : EffectH}
           -> {{ u : Universe }}
@@ -66,13 +73,13 @@ Resource .RetH (bracket acquire release between) = {!!}
           -> Hefty H [[ t ]]
           -> Hefty H [[ t ]]
           -> Hefty H [[ t ]]
-`bracket  {{ w = w }}  acquire release between  = {!!}
-{-
-    impure
-        (inj-left {{w}} (catch _))
-        (proj-fork-l {{w}} _ λ b → if b then m1 else m2)
-        \ ret → pure ((proj-ret-l {{w}} ret))
--}
+`bracket  {{ w = w }}  begin end body  =
+  impure (inj-left {{w}} (bracket _))
+          (proj-fork-l {{w}} _ \ b -> case b of \ where
+                                        acquire -> begin
+                                        release -> end
+                                        inBetween -> body)
+          \ ret → pure ((proj-ret-l {{w}} ret))
 
 
 instance
@@ -81,19 +88,60 @@ instance
   [[_]] ⦃ TypeUniverse ⦄ unit = ⊤
   [[_]] ⦃ TypeUniverse ⦄ num  = Nat
 
-program : {H There1 There2 There3 There4 : EffectH}
-          {{w1 : EffectHStorage H (Lift State)  There1}}
-          {{w2 : EffectHStorage H (Lift Throw)  There2}}
-          {{w3 : EffectHStorage H (Lift Output) There3}}
-          {{w4 : EffectHStorage H       Resource   There4}}
-           -> Hefty H String
+eResource : {Eff Eff' : Effect}
+        -> {{u : Universe}}
+        -> {{w : EffectStorage Eff Output Eff'}}
+        -> Elaboration (Resource {{u}}) Eff
+eResource .alg (bracket x) fork k = do
+      x <- (# givenHandle hOut (fork acquire) tt)
+      y <- (# givenHandle hOut (fork inBetween) tt)
+      z <- (# givenHandle hOut (fork release) tt)
+      `out (x .snd)
+      `out (y .snd)
+      `out (z .snd)
+      k (x .fst)
+    where open import Effect.Core.Free using (_>>=_; _>>_)
+
+eee : Elaboration (Resource +E+  Lift Output +E+ Lift Nil)
+                  (Output |> Nil)
+eee = eResource +A+ eLift +A+  eNil
+
+program : {H There1 There2 : EffectH}
+          {{w1 : EffectHStorage H (Lift Output) There1}}
+          {{w2 : EffectHStorage H      Resource There2}}
+           -> Hefty H ⊤
 program = do
-  `bracket
-    (up (out "{"))
-    (up (out "}"))
-    (do
-      (up (out "Main text are here"))
-      (up (out "Main text are here"))
-      (up (out "Main text are here"))
-      )
-  up get
+  `bracket (up (out "{"))
+           (up (out "}"))
+           do
+            up (out "b")
+            up (out "l")
+            up (out "a")
+  pure tt
+  where open import Effect.Core.Hefty using (_>>=_; _>>_)
+
+
+
+test : un (givenHandle hOut (elaborate eee program ) tt) ≡ (tt , "{bla}")
+test = refl
+
+
+
+program2 : {H There1 : EffectH}
+          {{w3 : EffectHStorage H (Lift Output) There1}}
+           -> Hefty H ⊤
+program2 = do
+  (up (out "{"))
+  (up (out "bla"))
+  (up (out "}"))
+  pure tt
+  where open import Effect.Core.Hefty using (_>>=_; _>>_)
+
+eee1 : Elaboration (Lift Output +E+ Lift Nil)
+                  (Output |> Nil)
+eee1 = eLift +A+ eNil
+
+
+
+test-2 : un (givenHandle hOut (elaborate eee1 program2 ) tt) ≡ (tt , "{bla}")
+test-2 = refl

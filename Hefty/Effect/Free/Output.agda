@@ -39,3 +39,8 @@ Ret Output (out str) = ⊤
      -> String
      -> Free E ⊤
 `out {{ w }} str = impure (inj-insert-left (out str)) λ x -> pure ((proj-ret-left {{w}} x))
+
+hOut : Handler A Output ⊤ ( A × String ) Eff
+ret hOut x _ = pure (x , "")
+hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
+  where open import Effect.Core.Free using (_>>=_; _>>_)

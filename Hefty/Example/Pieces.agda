@@ -114,11 +114,6 @@ hello-program = do `out "Hello"; `out " "; `out "world!\n"
   where open import Effect.Core.Free using (_>>=_; _>>_)
 
 
-hOut : Handler A Output ⊤ ( A × String ) Eff
-ret hOut x _ = pure (x , "")
-hdl hOut (out s) k p = do (x , s') <- k tt p; pure (x , s ++ s')
-  where open import Effect.Core.Free using (_>>=_; _>>_)
-
 test-hello :
     un ((givenHandle hOut hello-program) tt) ≡ (tt , "Hello world!\n")
 test-hello = refl
