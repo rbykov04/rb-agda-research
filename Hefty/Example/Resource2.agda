@@ -149,6 +149,23 @@ program = do
 test : un (givenHandle hOut (elaborate eee program ) tt) ≡ (tt , "BlaBla")
 test = refl
 
+program3 : {H There1 There2 : EffectH}
+          {{w1 : EffectHStorage H (Lift Output) There1}}
+          {{w2 : EffectHStorage H      Resource There2}}
+           -> Hefty H ⊤
+program3 = do
+  `bracket ( up (out "1") >> pure "Bla")
+          (\ s -> s >>= \ str -> up (out str))
+          (\ s -> s >>= \ str -> up (out str))
+  pure tt
+  where open import Effect.Core.Hefty using (_>>=_; _>>_)
+
+
+test2 : un (givenHandle hOut (elaborate eee program3 ) tt) ≡ (tt , "11Bla1Bla")
+test2 = refl
+
+
+
 
 
 program2 : {H There1 : EffectH}
