@@ -148,3 +148,21 @@ test1  = testPut 'x'
 
 test2 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E Char
 test2  = testGet
+
+{-
+Req : {a b : Level}
+      -> {There : Effect2 {a} {b}}
+      -> (E : Effect2 {a} {b})
+      -> (Eff : Effect2 {a} {b})
+      -> Set (lsuc a ⊔ lsuc b)
+Req {a} {b} {There} E Eff = EffectStorage2 E Eff There
+
+test3 : {E : Effect2} -> Req E Test' -> Free2 E ⊤
+test3  = testPut 'x'
+mk : {There : Effect2}
+    -> (E : Effect2)
+    -> (Here : Effect2)
+    -> {{ EffectStorage2 E Here There }}
+
+{{ mk E Teletype }}
+-}
