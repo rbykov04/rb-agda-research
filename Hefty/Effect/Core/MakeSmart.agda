@@ -128,3 +128,23 @@ mkSmart0 id-name eff op-name ret-type  = do
                 -> Free2  E ret-type)
   declareDef (mkArg visible id-name) ty
   smart-constr0-def id-name op-name
+
+
+data TestOp : Set1 where
+  put  : Char   -> TestOp
+  get  : TestOp
+
+Test' : Effect2
+Test' .Op          = TestOp
+Test' .Ret (put x) = ⊤
+Test' .Ret get     = Char
+
+
+unquoteDecl testPut = mkSmart1 testPut Test' (quote put) Char ⊤
+unquoteDecl testGet = mkSmart0 testGet Test' (quote get) Char
+
+test1 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E ⊤
+test1  = testPut 'x'
+
+test2 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E Char
+test2  = testGet
