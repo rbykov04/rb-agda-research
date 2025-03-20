@@ -113,5 +113,6 @@ case_of_ : A -> (A -> B) -> B
 case x of f = f x
 
 
+infixr 12 _++_
 _++_ : String -> String -> String
 a ++ b = primStringAppend a b
