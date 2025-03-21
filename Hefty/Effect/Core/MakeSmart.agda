@@ -149,20 +149,26 @@ test1  = testPut 'x'
 test2 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E Char
 test2  = testGet
 
-{-
-Req : {a b : Level}
-      -> {There : Effect2 {a} {b}}
-      -> (E : Effect2 {a} {b})
-      -> (Eff : Effect2 {a} {b})
-      -> Set (lsuc a ⊔ lsuc b)
-Req {a} {b} {There} E Eff = EffectStorage2 E Eff There
 
-test3 : {E : Effect2} -> Req E Test' -> Free2 E ⊤
-test3  = testPut 'x'
-mk : {There : Effect2}
-    -> (E : Effect2)
-    -> (Here : Effect2)
-    -> {{ EffectStorage2 E Here There }}
 
-{{ mk E Teletype }}
--}
+mkSmartAll :  TC ⊤
+mkSmartAll = do
+    putName <- freshName "test2Put"
+    mkSmart1 putName Test' (quote put) Char ⊤
+    getName <- freshName "test2Get"
+    mkSmart0 getName Test' (quote get) Char
+
+unquoteDecl  = mkSmartAll
+
+mkSmartAll2 : Name -> Name -> TC ⊤
+mkSmartAll2 putN getN = do
+    mkSmart1 putN Test' (quote put) Char ⊤
+    mkSmart0 getN Test' (quote get) Char
+unquoteDecl test2Put test2Get  = mkSmartAll2 test2Put test2Get
+
+
+test3 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E ⊤
+test3  = test2Put 'x'
+
+test4 : {E There : Effect2} -> {{ EffectStorage2 E Test' There }} -> Free2 E Char
+test4  = test2Get
