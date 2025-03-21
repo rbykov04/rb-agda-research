@@ -137,7 +137,7 @@ inj-right {{ w = sift w }} (injl next) = injl next
 inj-right {{ w = sift w }} (injr there) = injr (inj-insert-right {{w}} there)
 -}
 
-data EffectRow  : Effect -> Effect -> Set₁ where
+data EffectRow  : -> Set₁ where
     insert  : {E Tail : Effect}
             -> EffectRow E (E |> Tail)
     sift    : {Result E E2 Tail : Effect}

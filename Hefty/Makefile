@@ -1,8 +1,11 @@
 .PHONY: run clean
 
 #exports
-run: IO
-	./IO
+run: Free2List
+	./Free2List
+
+Free2List: Example/Experimental/Free2List.agda
+	agda  -i. --compile  --library=standard-library-2.2 Example/Experimental/Free2List.agda
 
 runRep: Reproduce
 	./Reproduce
@@ -51,3 +54,4 @@ clean:
 	rm -f CustomOutHandler
 	rm -f *.js
 	rm -rf build
+	rm -f Free2List

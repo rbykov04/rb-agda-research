@@ -39,12 +39,31 @@ cong : (f : A -> B) {x y : A}
   -> f x ≡ f y
 cong f refl  =  refl
 
+cong2 : {a : Level} {A : Set a}(f : A -> B) {x y : A}
+  -> x ≡ y
+    ---------
+  -> f x ≡ f y
+cong2 f refl  =  refl
+
+
+
 trans :  {x y z : A}
   → x ≡ y
   → y ≡ z
     -----
   → x ≡ z
 trans refl refl  =  refl
+
+trans2 : {a : Level} {A : Set a} {x y z : A }
+  → x ≡ y
+  → y ≡ z
+    -----
+  → x ≡ z
+trans2 refl refl  =  refl
+
+
+
+
 
 subst :  {x y : A} (P : A → Set)
   → x ≡ y
@@ -75,6 +94,13 @@ sym : ∀ {A : Set a} {x y : A}
     -----
   → y ≡ x
 sym refl = refl
+
+sym2 : ∀ {A : Set a} {x y : A}
+  → x ≡ y
+    -----
+  → y ≡ x
+sym2 refl = refl
+
 
 ---
 -- also know as ( , )
