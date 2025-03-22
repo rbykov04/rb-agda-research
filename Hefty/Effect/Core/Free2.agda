@@ -23,9 +23,11 @@ private
     E : Set e
 
 record Effect2 {a b : Level} : Set (lsuc (a ⊔ b)) where -- (a ⊔ b) where
+ constructor _⦊_
  field Op  : Set a
        Ret : Op -> Set b
 open Effect2 public
+infix 6 _⦊_
 
 data Free2 {a b : Level} (eff : Effect2 {a} {b}) ( A : Set b) : Set (lsuc (a ⊔ b)) where
     pure   : A                                                -> Free2 eff A
