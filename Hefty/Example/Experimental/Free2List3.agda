@@ -30,16 +30,6 @@ private
     D : Set d
     E : Set e
 
-data Any {a b : Level}
-         (P : Effect2 {a} {b} → Set (lsuc (a ⊔ b))) : List (Effect2 {a} {b}) → Set (lsuc (a ⊔ b)) where
-  here  : ∀ {x : Effect2} {xs : List Effect2} → P x → Any P (x ∷ xs)
-  there : ∀ {x : Effect2} {xs : List Effect2} → Any P xs → Any P (x ∷ xs)
-
-infix 4 _∈_
-
-_∈_ :{a b : Level} (x : Effect2 {a} {b}) (xs : List (Effect2 {a} {b})) → Set (lsuc a ⊔ lsuc b)
-x ∈ xs = Any (x ≡_) xs
-
 
 -- Специализированный для эффекта список
 -- TODO: когда будут обычные списки, использовать их
@@ -201,8 +191,73 @@ fold point alg (impure op k) = alg op (λ r → fold point alg (k r))
 
 
 
+_>>=_ : {a b : Level} {A : Set b} {B : Set b}
+        {Effs : Row a b}
+        -> Free Effs A -> (A -> Free Effs B) -> Free Effs B
+m >>= g = fold g impure m
+
+-- How does it work?
+_>>_ : {a b : Level} {A : Set b} {B : Set b}
+       {Effs : Row a b}
+       -> Free Effs A → Free Effs B → Free Effs B
+m1 >> m2 = m1 >>= λ _ → m2
+
+{-
+data Any {a b : Level}
+         (P : Effect2 {a} {b} → Set (lsuc (a ⊔ b))) : List (Effect2 {a} {b}) → Set (lsuc (a ⊔ b)) where
+  here  : ∀ {x : Effect2} {xs : List Effect2} → P x → Any P (x ∷ xs)
+  there : ∀ {x : Effect2} {xs : List Effect2} → Any P xs → Any P (x ∷ xs)
+
+infix 4 _∈_
+-}
+{-
+record Effect (o r : Level) : Type (ℓsuc (o ⊔ r)) where
+  constructor __
+  field
+    Op : Type o
+    Ret : Op → Type r
+
+infix 6 _⦊_
+
+_∈_ :{a b : Level}
+      (x : Effect2 {a} {b})
+      -> (Effs : Row a b)
+      -> {!Set!}
+x ∈ xs = (Op ? , Ret ?)
+
+send : {a b : Level} {E Here There : Effect2 {a} {b}}
+       {Effs : Row a b}
+     -> ⦃ Here ∈ Effs ⦄
+     -> (op : Effect2.Op Here)
+     -> Free Effs (Effect2.Ret Here op)
+
+send = ?
+-}
+{-
+{Effs = _} ⦃ op ∷~ ⦄ x = impure (op ∷~) \ o → pure  {!!}
+send {Effs = _} ⦃ op ∷~ ⦄ x = impure (op ∷~) \ o → pure  {!!}
+send {Effs = _} ⦃ -∷ w ⦄ x = impure {!!} {!!}
+-}
+
 _ : Free (Teletype ∷ Filesystem ∷ []) ⊤
 _
   = impure (-∷ ReadFile "test.txt" ∷~) \ file
   -> impure (putChar '\n' ∷~) λ tt
   -> pure tt
+
+
+
+
+{-
+_
+  : {Effs : Row lzero lzero}
+  → ⦃ Teletype ∈ Effs ⦄
+  → ⦃ Filesystem ∈ Effs ⦄
+  → Free Effs ⊤
+_ = do
+  ?
+-}
+{-
+  send ask
+  send (modify λ x → x)
+-}
