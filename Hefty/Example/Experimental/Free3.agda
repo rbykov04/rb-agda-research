@@ -229,12 +229,12 @@ givenHandle : {a b : Level}
             {P : Set b}
             -> {Effs     : Effect {a} {b}}
             -> {X        : Effect {a} {b}}
-            -> Handler A (X |> Effs) P B Effs
+            -> Handler A X P B Effs
             -> Free (X |> Effs) A
             -> (P -> Free {a} {b} Effs B)
 givenHandle h eff = fold (ret h) func eff where
   func : _
-  func (inl op) k p = hdl h (inl op) k p
+  func (inl op) k p = hdl h op k p
   func (inr op) k p = impure op λ x → k x p
 
 putStrLn :
@@ -249,6 +249,38 @@ putStrLn x = f (primStringToList x) where
     send $ putChar x
     f str
 
+execAlgebra : Alg IOEF (IO A)
+execAlgebra (liftIO ty f) k = f >>=IO k
+
+exec : Free IOEF A -> IO A
+exec = fold return execAlgebra
+
+
+hFilesystem
+  : {Effs : Effect}
+  -> {{ IOEF   ∈ Effs }}
+  -> Handler A Filesystem  ⊤ ( ⊤ ) Effs
+hFilesystem .ret _ _ = pure tt
+hFilesystem .hdl (ReadFile path) k _ = do
+  str <- send (liftIO String (readFileIO path))
+  k str tt
+hFilesystem .hdl (WriteFile path text) k _ = do
+  send (liftIO ⊤ (writeFileIO path text))
+  k tt tt
+
+hTeletype
+  : {Effs : Effect}
+  -> {{ IOEF   ∈ Effs }}
+  -> Handler A Teletype  ⊤ ( ⊤ ) Effs
+hTeletype .ret _ _ = pure tt
+hTeletype .hdl (putChar ch) k _ = do
+  send (liftIO ⊤ (putCharIO ch))
+  k tt tt
+hTeletype .hdl getChar k _      = do
+  ch <- send (liftIO Char (getCharIO))
+  k ch tt
+
+
 cat
   : {Effs : Effect {lsuc lzero} {lzero}}
   -> {{ Teletype   ∈ Effs }}
@@ -259,41 +291,16 @@ cat file = do
   txt <- send $ ReadFile file
   putStrLn txt
 
-execAlgebra : Alg IOEF (IO A)
-execAlgebra (liftIO ty f) k = f >>=IO k
 
-exec : Free IOEF A -> IO A
-exec = fold return execAlgebra
-
-
-hFilesystem
-  : {Effs : Effect}
-  -> Handler A (Filesystem |> Effs |> IOEF) ⊤ ( ⊤ ) (Effs |> IOEF)
-hFilesystem .ret _ _ = pure tt
-hFilesystem .hdl (inl (ReadFile path)) k _ = do
-  str <- send (liftIO String (readFileIO path))
-  k str tt
-hFilesystem .hdl (inl (WriteFile path text)) k _ = do
-  send (liftIO ⊤ (writeFileIO path text))
-  k tt tt
-hFilesystem .hdl (inr o) k x = pure tt
-
-
-hTeletype : Handler A (Teletype |> IOEF) ⊤ ( ⊤ ) IOEF
-hTeletype .ret _ _ = pure tt
-hTeletype .hdl (inl (putChar ch)) k _ = do
-  send (liftIO ⊤ (putCharIO ch))
-  k tt tt
-hTeletype .hdl (inl getChar) k _      = do
-  ch <- send (liftIO Char (getCharIO))
-  k ch tt
-hTeletype .hdl (inr o) k x = pure tt
 
 program : Free (Filesystem |> Teletype |> IOEF) ⊤
 program = do
   cat "test.txt"
 
 
+program2 : Free (Teletype |> Filesystem |> IOEF) ⊤
+program2 = do
+  cat "test.txt"
 
 main : IO ⊤
 main = exec (givenHandle hTeletype
@@ -301,4 +308,4 @@ main = exec (givenHandle hTeletype
 
 main1 : IO ⊤
 main1 = exec (givenHandle hFilesystem
-            (givenHandle hTeletype program tt) tt) >>=IO \ x -> return tt
+             (givenHandle hTeletype program2 tt) tt) >>=IO \ x -> return tt
