@@ -135,7 +135,6 @@ inj-right : {E Here : Effect}
 inj-right {{ insert }} op = injr op
 inj-right {{ w = sift w }} (injl next) = injl next
 inj-right {{ w = sift w }} (injr there) = injr (inj-insert-right {{w}} there)
--}
 
 data EffectRow  : -> Set₁ where
     insert  : {E Tail : Effect}
@@ -148,6 +147,7 @@ data EffectRow  : -> Set₁ where
 data IN  : Effect -> EffectRow where
 
 
+-}
 
 
 

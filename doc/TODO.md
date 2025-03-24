@@ -96,3 +96,16 @@ we will exploit this property to define monads modularly.
 
 - Add bib tex file
 
+
+- Add
+flags:
+  --erased-matches
+  --exact-split
+  --guardedness
+  --hidden-argument-puns
+  --no-import-sorts
+  --postfix-projections
+  --qualified-instances
+
+  -Werror
+  -WnoUnsupportedIndexedMatch

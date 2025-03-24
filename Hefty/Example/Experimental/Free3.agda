@@ -311,6 +311,7 @@ main1 = exec (givenHandle hFilesystem
              (givenHandle hTeletype program2 tt) tt) >>=IO \ x -> return tt
 
 
+{-
 givenHandle' : {a b : Level}
             {A : Set b}
             {B : Set b}
@@ -323,16 +324,16 @@ givenHandle' : {a b : Level}
             -> Handler A X P B Effs
             -> Free E A
             -> (P -> Free {a} {b} Effs B)
-givenHandle' {a} {b} {A} {B} {P} {Effs} {X} {E} ⦃ w1 ⦄ ⦃ w2 ⦄ h eff =
+givenHandle' {a} {b} {A} {B} {P} {Effs} {X} {E} ⦃ w1 ⦄ ⦃ w2 ⦄  h eff =
     fold (ret h) func (to-front eff) where
       to-front
             :  {{ w1 : X    ∈ E }}
-            -> {{ w1 : Effs ∈ E }}
+            -> {{ w2 : Effs ∈ E }}
             -> Free E A -> Free (X |> Effs) A
       to-front ⦃ reflex ⦄ ⦃ reflex ⦄ (pure a) = pure a
       to-front ⦃ reflex ⦄ ⦃ reflex ⦄ (impure op k) = do
         x <- send op
-        to-front {{reflex}} (k x)
+        to-front {{w1}} {{w1}}  (k x)
       to-front ⦃ reflex ⦄ ⦃ insert ⦄ (pure a) = pure a
       to-front ⦃ reflex ⦄ ⦃ insert ⦄ (impure op k) = do
         x <- send op
@@ -342,10 +343,13 @@ givenHandle' {a} {b} {A} {B} {P} {Effs} {X} {E} ⦃ w1 ⦄ ⦃ w2 ⦄ h eff =
         x <- send op
         to-front {{reflex}} (k x)
       to-front ⦃ insert ⦄ ⦃ w2 ⦄ (pure a) = pure a
-      to-front ⦃ insert ⦄ ⦃ w2 ⦄ (impure (inl x) k) = ?
-      to-front ⦃ insert ⦄ ⦃ w2 ⦄ (impure (inr x) k) = ?
+      to-front ⦃ insert ⦄ ⦃ w2 ⦄ (impure (inl op) k) = do
+        x <- send op
+        to-front {{w1}} {{w2}} (k x)
+      to-front ⦃ insert ⦄ ⦃ w2 ⦄ (impure (inr op) k) = {!!}
       to-front ⦃ sift w1 ⦄ ⦃ w2 ⦄ (pure a) = pure a
-      to-front ⦃ sift w1 ⦄ ⦃ w2 ⦄ (impure op k) = {!!}
+      to-front ⦃ sift w1 ⦄ ⦃ w2 ⦄ (impure (inl op) k) = {!!}
+      to-front ⦃ sift w1 ⦄ ⦃ w2 ⦄ (impure (inr op) k) = {!!}
       func : _
       func (inl op) k p = hdl h op k p
       func (inr op) k p = impure op λ x → k x p
@@ -355,3 +359,4 @@ givenHandle' {a} {b} {A} {B} {P} {Effs} {X} {E} ⦃ w1 ⦄ ⦃ w2 ⦄ h eff =
 main3 : IO ⊤
 main3 = exec (givenHandle' {{insert}} {{sift (sift reflex)}} hTeletype
             (givenHandle' {{sift insert}} {{reflex}} hFilesystem program2 tt) tt) >>=IO \ x -> return tt
+-}

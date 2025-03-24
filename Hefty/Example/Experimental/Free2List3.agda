@@ -214,13 +214,13 @@ data _∈_ {o r : Level} : Effect2 {o} {r} → Row o r → Set (lsuc (o ⊔ r)) 
     → eff ∈ (eff′ ∷ effs)
 
 
+{-
 send : {a b : Level} {E : Effect2 {a} {b}}
        {Effs : Row a b}
      -> ⦃ E ∈ Effs ⦄
      -> (op : Effect2.Op E)
      -> Free Effs (Effect2.Ret E op)
 send = {!!}
-{-
 send {Effs = _} ⦃ ~ ⦄ op = impure (op ∷~) λ x → pure x
 send {Effs = _} ⦃ -∷ xs ⦄ op = send ⦃ xs ⦄ op
 -}
@@ -228,8 +228,8 @@ send {Effs = _} ⦃ -∷ xs ⦄ op = send ⦃ xs ⦄ op
 
 
 
-_
-  : {Effs : Row ? ?}
+{-
+  : {Effs : Row {!!} {!!}}
   → ⦃ Teletype ∈ Effs ⦄
   → ⦃ Filesystem ∈ Effs ⦄
   → Free Effs ⊤
@@ -242,3 +242,5 @@ _
   = impure (-∷ ReadFile "test.txt" ∷~) \ file
   -> impure (putChar '\n' ∷~) λ tt
   -> pure tt
+
+-}

@@ -1,4 +1,26 @@
-.PHONY: run clean
+.PHONY: run clean test
+
+ALL_SRCS := $(wildcard *.agda)
+ALL_SRCS += $(wildcard Effect/*.agda)
+ALL_SRCS += $(wildcard Effect/Core/*.agda)
+ALL_SRCS += $(wildcard Effect/Free/*.agda)
+ALL_SRCS += $(wildcard Effect/Free2/*.agda)
+ALL_SRCS += $(wildcard Effect/Hefty/*.agda)
+ALL_SRCS += $(wildcard Example/*.agda)
+ALL_SRCS += $(wildcard Example/Experimental/*.agda)
+
+AGDA_CHECK := agda \
+		--guardedness \
+		--erasure \
+		--erased-matches
+
+test:
+	for i in $(ALL_SRCS); do \
+		${AGDA_CHECK} $$i; \
+	done
+
+
+
 
 #exports
 run: Free2List
@@ -54,4 +76,5 @@ clean:
 	rm -f CustomOutHandler
 	rm -f *.js
 	rm -rf build
+	rm -rf _build
 	rm -f Free2List

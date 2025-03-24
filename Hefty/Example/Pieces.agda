@@ -97,7 +97,7 @@ l4 = there (there (there here))
 
 l5 : ListSt (60 ∷ 10 ∷ 20 ∷ 5 ∷ []) 5 (60 ∷ 10 ∷ 20 ∷ [])
 l5 = there (there (there here))
-
+{-
 `incr :
       {E There : Effect}
      -> {{ EffectStorage E State There }}
@@ -108,6 +108,7 @@ l5 = there (there (there here))
 test-incr :
     un ((givenHandle hSt `incr ) 0) ≡ (tt , 1)
 test-incr = refl
+-}
 
 hello-program : Free (coProduct Output Nil) ⊤
 hello-program = do `out "Hello"; `out " "; `out "world!\n"

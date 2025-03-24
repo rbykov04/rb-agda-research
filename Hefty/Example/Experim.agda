@@ -1,5 +1,5 @@
 {-# OPTIONS  --backtracking-instance-search  #-}
-module Example.Teletype where
+module Example.Experim where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma

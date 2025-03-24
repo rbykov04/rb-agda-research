@@ -153,6 +153,7 @@ record Handler {a b : Level}
           hdl : Alg3 E {{w}} (P -> Free effList Continue {{w2}} B)
 open Handler public
 
+{-
 givenHandle2 : {a b : Level}
             {A : Set b}
             {B : Set b}
@@ -167,10 +168,11 @@ givenHandle2 : {a b : Level}
             -> (P -> Free effList There {{w3}} B)
 givenHandle2 {a} {b} {A} {B} {P} {effList} {E} {Here} {There} ⦃ w1 ⦄ ⦃ w2 ⦄ ⦃ w3 ⦄ h eff
   = fold3 {{w1}} (ret h) func eff where
+  to-front : {!!}
+  to-front = {!!}
   func : Alg3 E (P -> Free effList There {{w3}} B )
-  func op k p = {!impure ? ?!}
+  func op k p = impure {!!} {!!}
   --k {!!} p
-{-
 
     fold3 (ret h) func (to-front2 eff) where
     func : Alg3 (coProduct2 Here There) (P -> Free2 {a} {b} There B)

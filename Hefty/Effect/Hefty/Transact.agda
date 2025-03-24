@@ -37,7 +37,7 @@ private
     C : Set c
     D : Set d
     E : Set e
-
+{-
 transact : {H' H'' H''' : EffectH}
            {{w1 : EffectHStorage H (Lift State) H'}}
            {{w2 : EffectHStorage H (Lift Throw) H''}}
@@ -64,4 +64,4 @@ test-transact : un ((givenHandle hSt
                    (elaborate eTransact transact ))
                    tt) )0) ≡ (just 2 , 2)
 test-transact = refl
-
+-}

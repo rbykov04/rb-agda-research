@@ -72,6 +72,7 @@ data EffectStorage2 {a b : Level} :
     sift  : {E Here Next There : Effect2 {a} {b}}
             -> EffectStorage2 {a} {b} E Here There
             -> EffectStorage2 {a} {b} (coProduct2 Next E) Here (coProduct2 Next There)
+open EffectStorage2
 
 instance
   insert21 : {a b : Level}
