@@ -1,4 +1,4 @@
-module Example.Experimental.NamesForEffectStorage where
+module Experimental.NamesForEffectStorage where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat

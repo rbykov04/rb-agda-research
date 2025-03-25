@@ -1,7 +1,7 @@
 {-
 inspired: https://github.com/vasiliyl/cm-effects/blob/main/src/Control/Effect/Algebraic/Effect.agda
 -}
-module Example.Experimental.Free3 where
+module Experimental.Free3 where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat

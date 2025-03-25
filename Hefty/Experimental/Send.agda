@@ -1,5 +1,5 @@
 {-# OPTIONS  --backtracking-instance-search  #-}
-module Example.Experimental.Send where
+module Experimental.Send where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat
