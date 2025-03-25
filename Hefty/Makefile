@@ -8,6 +8,10 @@ ALL_SRCS += $(wildcard Effect/Free2/*.agda)
 ALL_SRCS += $(wildcard Effect/Hefty/*.agda)
 ALL_SRCS += $(wildcard Example/*.agda)
 ALL_SRCS += $(wildcard Experimental/*.agda)
+ALL_SRCS += $(wildcard Foundation/*.agda)
+ALL_SRCS += $(wildcard Control/*.agda)
+ALL_SRCS += $(wildcard Control/Effect/*.agda)
+ALL_SRCS += $(wildcard Control/Effect/Algebraic/*.agda)
 
 AGDA_CHECK := agda \
 		--guardedness \
