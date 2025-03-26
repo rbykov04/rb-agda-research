@@ -55,6 +55,6 @@ test-incr2 = refl
 
 
 
-profState1 : forall (n : Nat) ->
+proofState1 : ∀ (n : Nat) ->
     un (runState inc n) ≡ un (givenHandle hState inc n)
-profState1 n = refl
+proofState1 n = refl
