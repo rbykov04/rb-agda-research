@@ -37,7 +37,7 @@ data IOOP : Set1 where
   liftIO  : (A : Set) -> IO A ->  IOOP
 
 
-IOEF : Effect2
+IOEF : Effect2 {lsuc lzero} {lzero}
 IOEF .Op = IOOP
 IOEF .Ret (liftIO ty x) = ty
 
