@@ -12,6 +12,9 @@ ALL_SRCS += $(wildcard Foundation/*.agda)
 ALL_SRCS += $(wildcard Control/*.agda)
 ALL_SRCS += $(wildcard Control/Effect/*.agda)
 ALL_SRCS += $(wildcard Control/Effect/Algebraic/*.agda)
+ALL_SRCS += $(wildcard Control/Effect/Algebraic/Effect/*.agda)
+ALL_SRCS += $(wildcard Control/Effect/Algebraic/OpenUnion/*.agda)
+ALL_SRCS += $(wildcard Control/Effect/Algebraic/FirstOrder/*.agda)
 
 AGDA_CHECK := agda \
 		--guardedness \
