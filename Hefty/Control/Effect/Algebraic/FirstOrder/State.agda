@@ -9,29 +9,33 @@ open import Foundation.Base
 
 open import Control.Effect.Algebraic.Effect
 
-open import Mystdlib.Universe
-{-
-data StateType : Set where
-  unit  : StateType
-  state   : StateType
+data StatePolyOp {s : Level} (S : Set s) : Set s  where
+    get : StatePolyOp S
+    put : S -> StatePolyOp S
 
 
-data StateOp {s : Level} ( S : Set s ) {{u : Universe}} : Set s  where
+StatePoly : {s : Level} (T : Set s) (S : Set s) -> Effect {s} {s}
+StatePoly T S = record
+    { Op = StatePolyOp S
+    ; Ret = λ where
+        get  → S
+        (put _) →  T
+    }
+
+
+State' : (S : Set) ->  Effect
+State' S = StatePoly ⊤ S
+
+data StateOp (S : Set) : Set1  where
     get : StateOp S
-    put : Ty -> S -> StateOp S
+    put : S -> StateOp S
 
-State : {s : Level} ( S : Set s ) {{u : Universe}} -> Effect
+
+State : (S : Set) -> Effect
 State S = record
     { Op = StateOp S
     ; Ret = λ where
-        (get ) → S
-        (put t _) → [[ t ]]
+        get  → S
+        (put _) → ⊤
     }
--}
-{-
-instance
-  TypeUniverse : Universe
-  Ty  ⦃ TypeUniverse ⦄ = StateType
-  [[_]] ⦃ TypeUniverse ⦄ unit = ⊤
-  [[_]] ⦃ TypeUniverse ⦄ num  = {!!}
--}
+

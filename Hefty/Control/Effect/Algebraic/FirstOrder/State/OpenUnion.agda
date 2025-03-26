@@ -2,6 +2,7 @@ module Control.Effect.Algebraic.FirstOrder.State.OpenUnion
     where
 
 open import Agda.Builtin.String
+open import Agda.Builtin.Sigma
 open import Agda.Builtin.Char
 open import Agda.Builtin.List
 open import Agda.Builtin.Unit
@@ -15,15 +16,27 @@ open import Control.Effect.Algebraic.Effect.OpenUnion.Properties
 open import Control.Effect.Algebraic.Effect.Free
 open import Control.Effect.Algebraic.FirstOrder.State
 
+private
+  variable
+    a b c d e : Level
+    A : Set a
+    B : Set b
+    C : Set c
+    D : Set d
+    E : Set e
+
+
+hState : {Eff : Effect} {S : Set}
+    -> Handler A (State S) S ( S × A ) Eff
+ret hState x s = pure (s , x)
+hdl hState get k n = k n n
+hdl hState (put m) k _ = k tt m
+
 runState
-  : {s a : Level} {S : Type s} {Effs : Effect s s} {A : Type a}
+  : {A S : Set} {Effs : Effect {lsuc lzero} {lzero}}
   → Free (State S ⊕ Effs) A
   → S
   → Free Effs (S × A)
-runState =
-  fold
-    (λ a s → pure (s , a) )
-    (λ where
-      (inl (modify f)) k s → k (f s) (f s)
-      (inr op) k s → impure op λ ret → k ret s
-    )
+runState prog init = do
+  (s , a ) <- givenHandle hState prog init
+  pure ((s , a))

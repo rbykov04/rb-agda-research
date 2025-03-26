@@ -1,8 +1,9 @@
-
 module Example.State.State where
 
+open import Agda.Builtin.Sigma
 open import Agda.Builtin.Unit
 open import Agda.Builtin.String
+open import Agda.Builtin.Nat
 
 open import Mystdlib.Universe
 open import Foundation.Base
@@ -13,38 +14,31 @@ open import Control.Effect.Algebraic.Effect.OpenUnion
 open import Control.Effect.Algebraic.Effect.OpenUnion.Properties
 
 open import Control.Effect.Algebraic.FirstOrder.IO hiding (_>>_ ; _>>=_)
-open import Control.Effect.Algebraic.FirstOrder.Filesystem
-open import Control.Effect.Algebraic.FirstOrder.Filesystem.OpenUnion
-open import Control.Effect.Algebraic.FirstOrder.Teletype
 open import Control.Effect.Algebraic.FirstOrder.State
+open import Control.Effect.Algebraic.FirstOrder.State.OpenUnion
+open import Control.Effect.Algebraic.FirstOrder.Teletype
+open import Control.Effect.Algebraic.FirstOrder.Teletype.OpenUnion
 
-data StateType : Set where
-  unit  : StateType
-  state   : StateType
+
+example1 : Free (State String)   ⊤
+example1 = impure (put "str") λ x → pure tt
+
+inc : {Effs : Effect}
+  → {{ State Nat ∈ Effs }}
+  → Free Effs Nat
+inc = do
+    x <- send get
+    send (put x)
+    pure x
 
 
-data StateOp  {{u : Universe}} : Set  where
-    get : Ty -> StateOp
-    put :  Ty -> Ty -> StateOp
-
-State : {{u : Universe}} -> Effect
-State = record
-    { Op = StateOp
-    ; Ret = λ where
-        (get t) → [[ t ]]
-        (put t x) →  [[ t ]]
-    }
-
-instance
-  TypeUniverse : Universe
-  Ty  ⦃ TypeUniverse ⦄ = StateType
-  [[_]] ⦃ TypeUniverse ⦄ unit = ⊤
-  [[_]] ⦃ TypeUniverse ⦄ state  = String
-
-program
-  : {Effs : Effect }
-  -> {{ State ∈ Effs }}
-  -> {{u : Universe}}
-  -> Free Effs ⊤
+program : Free (Teletype ⊕ State Nat ⊕ IOEF) ⊤
 program = do
-    send (put state {!!})
+   i <- inc
+   if (i < 10) then (putStrLn "less 10") else (putStrLn "eq 10 or more")
+
+
+main : IO ⊤
+main = exec do
+    (st , res) <- (givenHandle hState (givenHandle hTeletype program tt) 10)
+    pure res
