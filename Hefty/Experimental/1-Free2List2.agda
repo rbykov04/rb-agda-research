@@ -1,5 +1,5 @@
 {-# OPTIONS  --backtracking-instance-search  #-}
-module Experimental.Free2List2 where
+module Experimental.1-Free2List2 where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat

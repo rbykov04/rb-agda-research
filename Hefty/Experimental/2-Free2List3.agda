@@ -1,6 +1,6 @@
 {- Inspired (copied) from V.Lozovoy -}
 {-# OPTIONS  --backtracking-instance-search  #-}
-module Experimental.Free2List3 where
+module Experimental.2-Free2List3 where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Nat
