@@ -48,6 +48,7 @@ StatePoly {s} S = record
 State' : (S : Set) ->  Effect
 State' S = StatePoly S
 
+
 data StateOp (S : Set) : Set1  where
     get : StateOp S
     put : S -> StateOp S
