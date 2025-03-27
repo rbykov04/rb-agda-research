@@ -37,3 +37,7 @@ private
 
 eNil : {Eff : Effect} -> Elaboration (Lift Nil) Eff
 alg eNil ()
+
+instance
+  eNil′ : {Eff : Effect} -> Elab (Lift Nil) Eff
+  orate eNil′ = eNil

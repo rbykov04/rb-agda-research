@@ -261,3 +261,6 @@ givenHandle {A} {B} {P} {E} {Here} {There} h eff =
 #_ ⦃ w ⦄ = fold pure \ op' k → impure (inj-insert-right op')
                                       \ ret' → k (proj-ret-right {{w}} ret')
 
+effrow_＝_∣_ : (Row E Compl : Effect) -> Set1
+effrow Row ＝ E ∣ Compl = EffectStorage Row E Compl
+

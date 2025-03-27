@@ -330,3 +330,22 @@ Elaboration H Eff = AlgH H (Free Eff)
 elaborate : {H : EffectH}{Eff : Effect} -> Elaboration H Eff -> Hefty H A -> Free Eff A
 elaborate elab hefty = foldH pure elab hefty
 
+--FIXME: Change name
+record Elab (H : EffectH) (E : Effect) : Set1 where
+    field orate : AlgH H (Free E)
+
+open Elab public
+
+elab : {H : EffectH}{E : Effect} -> Elab H E -> Hefty H A ->  Free E A
+elab x h = elaborate (orate x) h
+
+instance
+    auto-elab
+        :  {H1 H2 : EffectH}{E : Effect}
+        -> {{ E1 : Elab H1 E }}
+        -> {{ E2 : Elab H2 E }}
+        -> Elab ( H1 +E+ H2 ) E
+    auto-elab ⦃ e1 ⦄ ⦃ e2 ⦄ .orate = orate e1 +A+ orate e2
+
+heftyrow_＝_∣_ : (Row E Compl : EffectH) -> Set1
+heftyrow Row ＝ E ∣ Compl = EffectHStorage Row E Compl

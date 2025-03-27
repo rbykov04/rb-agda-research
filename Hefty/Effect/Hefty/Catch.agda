@@ -62,7 +62,6 @@ RetH Catch (catch t) = [[ t ]]
         (proj-fork-l {{w}} _ λ b → if b then m1 else m2)
         \ ret → pure ((proj-ret-l {{w}} ret))
 
--- What is happening???
 eCatch : {Eff Eff' : Effect}
         -> {{u : Universe}}
         -> {{w : EffectStorage Eff Throw Eff'}}
