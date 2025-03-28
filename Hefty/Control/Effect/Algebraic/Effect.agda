@@ -20,6 +20,4 @@ _⊕_
 (effl ⊕ effr) .Ret (inr op) = Ret effr op
 
 
-
-
-
+FirstEffect = Effect {lsuc lzero} {lzero}

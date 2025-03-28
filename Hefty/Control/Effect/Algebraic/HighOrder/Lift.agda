@@ -17,7 +17,7 @@ private
     X Y Z Y\X : Effectᴴ {o} {o ⊔ r} {r}
 
 
-Lift : Effect -> Effectᴴ
+Lift : FirstEffect -> HighEffect
 Opᴴ   (Lift x)   = Op x
 Fork (Lift x) _  = Nil
 Retᴴ  (Lift x)   = Ret x

@@ -151,3 +151,5 @@ instance
         -> {{ E2 : Elab H2 E }}
         -> Elab ( H1 ⊕ᴴ H2 ) E
     auto-elab ⦃ e1 ⦄ ⦃ e2 ⦄ .orate = orate e1 ⊕ᴬ orate e2
+
+HighEffect  = Effectᴴ {lsuc lzero} {lsuc lzero} {lzero}
