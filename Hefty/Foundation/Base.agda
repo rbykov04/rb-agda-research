@@ -5,6 +5,7 @@ open import Agda.Primitive public
 open import Agda.Builtin.Bool
 open import Agda.Builtin.String
 open import Agda.Builtin.Unit
+open import Agda.Builtin.List
 open import Agda.Builtin.Maybe
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
@@ -45,13 +46,31 @@ if_then_else_ : Bool → A → A → A
 if true  then t else f = t
 if false then t else f = f
 
+infixr 6 _∧_
+infixr 5 _∨_
+
+
+_∧_ : Bool → Bool → Bool
+true  ∧ b = b
+false ∧ b = false
+
+_∨_ : Bool → Bool → Bool
+true  ∨ b = true
+false ∨ b = b
+
+
 case_of_ : A -> (A -> B) -> B
 case x of f = f x
-
 
 infixr 12 _++_
 _++_ : String -> String -> String
 a ++ b = primStringAppend a b
+
+_∷ʳ_ : {A : Set} → List A → A → List A
+[] ∷ʳ a = a ∷ []
+(x ∷ xs) ∷ʳ a = x ∷ ( xs ∷ʳ a  )
+
+
 
 data ⊥ : Set where
 ⊥-elim : ∀ {w} {Whatever : Set w} → ⊥ → Whatever
