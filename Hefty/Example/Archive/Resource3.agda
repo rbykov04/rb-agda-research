@@ -1,7 +1,7 @@
 
 {-# OPTIONS  --backtracking-instance-search  #-}
 
-module Example.Resource3 where
+module Example.Archive.Resource3 where
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma
@@ -96,6 +96,7 @@ eResource .alg (bracket x ) fork k = do
       x <- (# givenHandle hOut (fork acquire) tt)
       y <- (# givenHandle hOut (fork $ inBetween (x .fst)) tt)
       z <- (# givenHandle hOut (fork $ release (x .fst)) tt)
+      o <- (# givenHandle hOut (k {!!}) tt)
       `out (x .snd)
       `out (y .snd)
       `out (z .snd)

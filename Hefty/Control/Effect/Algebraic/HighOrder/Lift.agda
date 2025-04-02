@@ -29,13 +29,8 @@ up
 up {{w}} op = impure (inject {{w}} op)
                      (proj-fork-l {{w}} op (λ ()))
                      \ x → pure (project-ret {{w}} x)
+
 {-
-FIXME
-eLift : {Eff Eff0 Eff' : Effect}
-        {{w : EffectStorage Eff Eff0 Eff'}}
-        -> Elaboration (Lift Eff0) Eff
-alg (eLift ⦃ w = w ⦄) op fork k = impure (inj-insert-left op)
-                                  \ ret → k (proj-ret-left {{w}} ret)
 instance
   eLift′
     :  {Row E Compl : Effect}

@@ -44,7 +44,6 @@ dropVec zero [] = []
 dropVec zero (x ∷ xs) = x ∷ xs
 dropVec (suc m) (x ∷ xs) = dropVec m xs
 
-
 problem : {m : Nat} →  Nat  -> Vec Char m  → ⊤
 problem n [] = tt
 problem n (x ∷ xs) = problem n (dropVec 0 xs)

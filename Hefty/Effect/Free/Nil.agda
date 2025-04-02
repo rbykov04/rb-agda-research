@@ -15,7 +15,7 @@ open import Agda.Primitive
 open import Mystdlib.Mystdlib
 open import Mystdlib.Universe
 
-open import Effect.Core.Free  hiding (_>>=_; _>>_)
+open import Free  hiding (_>>=_; _>>_)
 
 private
   variable
@@ -33,3 +33,4 @@ Ret Nil = ⊥-elim
 
 un : Free Nil A -> A
 un (pure x) = x
+{

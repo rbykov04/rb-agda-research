@@ -28,4 +28,4 @@ private
 
 hOut : {Effs : Effect} -> Handler A Output ⊤ (String × A ) Effs
 ret hOut x _ = pure ("" , x)
-hdl hOut (out s) k p = do (s' , x) <- k tt p; pure (s ++ s' , x)
+hdl hOut (out s) k p = do (s', x) <- k tt p; pure (s ++ s' , x)

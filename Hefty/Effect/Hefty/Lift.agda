@@ -37,8 +37,7 @@ RetH  (Lift x)   = Ret x
 
 {- smart constructor for lift -}
 -- FIXME: Rename
-up : {E : Effect}
-     -> {H H' : EffectH}
+up : {E : Effect} -> {H H' : EffectH}
      -> {{ w : EffectHStorage H (Lift E) H' }}
      -> (op : Op E)
      -> Hefty H (Ret E op)
