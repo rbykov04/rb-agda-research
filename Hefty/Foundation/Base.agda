@@ -162,3 +162,7 @@ sym2 : ∀ {A : Set a} {x y : A}
     -----
   → y ≡ x
 sym2 refl = refl
+
+appendList : List A -> List A -> List A
+appendList [] r = r
+appendList (x ∷ l) r = x ∷ appendList l r

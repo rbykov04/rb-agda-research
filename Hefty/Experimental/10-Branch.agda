@@ -61,7 +61,7 @@ hBranch .hdl branch k x = do
 
 
 hBranch1 : {Effs : Effect} -> Handler A Branch ⊤ Nat Effs
-hBranch1 .ret x _ = pure {!!}
+hBranch1 .ret x _ = pure 0
 hBranch1 .hdl branch k x = do
   pure 100
 
@@ -110,5 +110,21 @@ calc3 = do
                   else
                     pure 20
 
-test4 : un $ givenHandle hBranch3 calc3 tt ≡ 50
+test3'' : un $ givenHandle hBranch3 calc3 tt ≡ 50
+test3'' = refl
+
+hBranch4 : {Effs : Effect} -> Handler Nat Branch ⊤ (List Nat) Effs
+hBranch4 .ret x _ = pure (x ∷ [])
+hBranch4 .hdl branch k op = do
+  x <- k true op
+  y <- k false op
+  pure $ appendList x y
+
+test4 : un $ givenHandle hBranch4 calc tt ≡ 5 ∷ 10 ∷ []
 test4 = refl
+
+test4' : un $ givenHandle hBranch4 calc0 tt ≡ 30 ∷ []
+test4' = refl
+
+test4'' : un $ givenHandle hBranch4 calc3 tt ≡ 5 ∷ 10 ∷ 15 ∷ 20 ∷ []
+test4'' = refl
