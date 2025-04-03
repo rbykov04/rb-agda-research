@@ -57,3 +57,15 @@ calc = do
 
 test1 : un $ givenHandle hChoice calc tt ≡ 10 ∷ 20 ∷ 30 ∷ 40 ∷ []
 test1 = refl
+
+calc2 : { Effs : Effect }
+  → ⦃ (Choice Nat ) ∈ Effs ⦄
+  → Free Effs Nat
+calc2 = do
+        x <- send $ choice (1 ∷ 2   ∷ [])
+        y <- send $ choice (10 ∷ 100 ∷ [])
+        pure (x * y)
+
+
+test2 : un $ givenHandle hChoice calc2 tt ≡ 10 ∷ 100 ∷ 20 ∷ 200 ∷ []
+test2 = refl
