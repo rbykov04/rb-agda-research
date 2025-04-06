@@ -33,6 +33,10 @@ test:
 run: Free2List
 	./Free2List
 
+
+15-IO: Experimental/15-IO.agda
+	agda  -i. --compile  --library=standard-library-2.2 Experimental/15-IO.agda
+
 Free2List: Example/Experimental/Free2List.agda
 	agda  -i. --compile  --library=standard-library-2.2 Example/Experimental/Free2List.agda
 

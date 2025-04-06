@@ -218,3 +218,23 @@ case-h-== ⦃ w = sift w ⦄ (inr y) f g = case-h-==
               (λ op' x → f op' (cong inr x) )
               (λ op' x → g (inr op') (cong inr x))
 
+{-
+sendᴴ : {a b : Level} {E Here There : Effectᴴ {a} {b}}
+     -> {{ w : EffectHStorage E Here There }}
+     -> (op : Opᴴ Here)
+     -> Hefty E (Retᴴ Here op)
+sendᴴ {{w}} op =
+    impure (inject {{w}} op)
+            (proj-fork-l {{w}} op λ b₁ → {!!})
+            (\ ret -> pure (project-ret {{w}} ret))
+
+up
+    : {{ w : heftyrow H ＝ (Lift E) ∣ H' }}
+    -> (op : Op E)
+    -> Hefty H (Ret E op)
+up {{w}} op = impure (inject {{w}} op)
+                     (proj-fork-l {{w}} op (λ ()))
+                     \ x → pure (project-ret {{w}} x)
+
+
+-}
