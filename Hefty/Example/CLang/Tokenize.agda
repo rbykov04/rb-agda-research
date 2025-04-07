@@ -28,7 +28,7 @@ open import Control.Effect.Algebraic.HighOrder.Lift.RowInsert
 open import Control.Effect.Algebraic.Hefty.RowInsert
 open import Example.CLang.TokenTypes
 open import Example.CLang.Effects
-open import Example.CLang.Branch
+open import Example.CLang.NonDet
 
 private
   variable

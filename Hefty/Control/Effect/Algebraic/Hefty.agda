@@ -114,6 +114,8 @@ Elaboration
 Elaboration H Eff = Algᴴ H (Free Eff)
 
 
+
+
 elaborate
     : {o r : Level}
     -> {A : Set r}

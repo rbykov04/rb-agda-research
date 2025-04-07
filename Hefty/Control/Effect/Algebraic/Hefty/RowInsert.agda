@@ -14,7 +14,7 @@ private
     a o k r : Level
     A : Set a
     H H0 H' H'' Row Compl : Effectᴴ {o} {k} {r}
-    X Y Z Y\X : Effectᴴ {o} {o ⊔ r} {r}
+    X Y Z Y\X : Effectᴴ {o} {k} {r}
 
 data EffectHStorage {o k r : Level}
     : Effectᴴ {o} {k} {r}
