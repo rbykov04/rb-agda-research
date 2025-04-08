@@ -34,7 +34,6 @@ private
     E : Set e
 
 
-
 data ChooseOp ( A : Set) : Set1
   where
   choose : List A → ChooseOp A

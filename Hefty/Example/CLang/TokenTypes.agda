@@ -201,4 +201,3 @@ open Parser public
 
 nextstep : Parser → AToken → Parser
 nextstep parser newAtok = mkParser (suc $ pos parser) newAtok
-

@@ -18,49 +18,146 @@ open import Data.Vec.Base
 
 open import Control.Effect.Algebraic.FirstOrder.Nil
 open import Control.Effect.Algebraic.FirstOrder.State
-open import Control.Effect.Algebraic.FirstOrder.Throw
 open import Control.Effect.Algebraic.Effect
-open import Control.Effect.Algebraic.Effect.Free hiding (_>>_ ; _>>=_)
-open import Control.Effect.Algebraic.Effect.RowInsert
-open import Control.Effect.Algebraic.Hefty hiding (_>>_ ; _>>=_)
-open import Control.Effect.Algebraic.HighOrder.Lift
-open import Control.Effect.Algebraic.HighOrder.Lift.RowInsert
-open import Control.Effect.Algebraic.Hefty.RowInsert
+open import Control.Effect.Algebraic.Effect.OpenUnion
+open import Control.Effect.Algebraic.Effect.OpenUnion.Properties
+open import Control.Effect.Algebraic.Effect.Free
 open import Example.CLang.TokenTypes
-open import Example.CLang.Effects
-open import Example.CLang.NonDet
+
+
+EffectOp = Set1
+MyEffect = Effect {lsuc lzero} {lsuc lzero}
+
+data One : EffectOp
+    where
+    one : One
+data Zero : EffectOp where
+
+
+zero-elim : ∀ {w} {Whatever : Set w} → Zero → Whatever
+zero-elim ()
 
 private
   variable
     a b c d e : Level
     A : Set a
     B : Set b
-    C : Set c
-    D : Set d
-    E : Set e
+    Effs : MyEffect
 
-tokenize1 : {H H1 H2 H3 H4 : Effectᴴ}
-    → ⦃ heftyrow H ＝ (Lift TokenizerResult) ∣ H1 ⦄
-    → ⦃ heftyrow H ＝ (Lift Logger) ∣ H2 ⦄
-    → ⦃ heftyrow H ＝ (Lift TokenThrow) ∣ H3 ⦄
-    → ⦃ heftyrow H ＝ Branch ∣ H4 ⦄
+data ThrowErrorOp (S : Set) : Set1 where
+    throwE : S -> ThrowErrorOp S
+
+ThrowError : (S : Set) -> MyEffect
+ThrowError S = record
+    { Op = ThrowErrorOp S
+    ; Ret = λ where
+        (throwE _) → Zero
+    }
+
+
+data LoggerOp : EffectOp
+    where
+    log : String → LoggerOp
+
+
+
+Logger : MyEffect
+Logger = record
+    { Op = LoggerOp
+    ; Ret = λ where
+        (log _)  → One
+    }
+
+data TokenizerOp : EffectOp
+    where
+    addToken : Token → TokenizerOp
+
+TokenizerResult : MyEffect
+TokenizerResult = record
+    { Op = TokenizerOp
+    ; Ret = λ where
+        (addToken _)  → One
+    }
+
+
+
+foo : Char → Maybe AToken
+foo ch = case charToDigit ch of λ where
+        (just d) → just (mkANumber d)
+        nothing → nothing
+
+record Recognize : Set1
+    where
+    constructor mkRec
+    field name : String
+          recognize :  Char → Maybe AToken
+open Recognize public
+
+
+TokenThrow = ThrowError (Nat × String)
+
+
+
+data ChooseOp (A : Set1) : EffectOp
+  where
+  choose : List A → ChooseOp A
+
+
+Choose : (A : Set1) → MyEffect
+Choose A = record
+  { Op = ChooseOp A
+  ; Ret = λ where
+    (choose _) -> A
+  }
+
+arr : List Recognize
+arr =  mkRec "Numbers" foo ∷ []
+
+throwError
+    : ⦃  TokenThrow ∈ Effs ⦄
+    → Nat
+    → String
+    → Free Effs A
+throwError pos text  = do
+    x <- send (throwE (pos , text))
+    zero-elim x
+
+tokenize
+    : ⦃ TokenizerResult ∈ Effs ⦄
+    → ⦃ Logger ∈ Effs ⦄
+    → ⦃ TokenThrow ∈ Effs ⦄
+    → ⦃ (Choose Recognize) ∈ Effs ⦄
     → List Char
     → Parser
-    → Hefty H ⊤
-tokenize1 [] parser = do
+    → Free Effs ⊤
+tokenize [] parser = {!!}
+tokenize (ch ∷ text) parser = do
+    prs <- send $ choose arr
+    send $ log ("Try with " ++ name prs)
+    case (recognize prs) ch of λ where
+        (just d) → {!!} -- tokenize1 text (nextstep parser (mkANumber d))
+        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
+    {!!}
+
+{-
+tokenize [] parser = do
     case finish (atok parser) (token (atok parser)) of λ where
         nothing          → pure tt
         (just tokenKind) → do
-          up $ log ("add last token")
-          up $ addToken (mkToken tokenKind 0 (pos parser))
-    where open import Control.Effect.Algebraic.Hefty using (_>>=_ ; _>>_)
-tokenize1 (ch ∷ text) parser =
+          send $ log ("add last token")
+          send $ addToken (mkToken tokenKind 0 (pos parser))
+tokenize (ch ∷ text) parser =
     case build (atok parser) (token (atok parser)) ch of λ where
         nothing  → do
-            up $ log ("build is fail, let's add to list")
+            send $ log ("build is fail, let's add to list")
             case finish (atok parser) (token (atok parser)) of λ where
                 (just tokenKind) → do
-                    up $ addToken (mkToken tokenKind 0 (pos parser))
+                    send $ addToken (mkToken tokenKind 0 (pos parser))
+                    x <- send $ choose {{{!!}}} {!arr!}
+
+                    {!!}
+-}
+{-
                     newThread1 <- up branch
                     if newThread1
                         then (do
@@ -115,9 +212,8 @@ tokenize1 (ch ∷ text) parser =
                 ; token  = newATok
                 ; build  = build $ atok parser
                 ; finish = finish $ atok parser } })
-    where open import Control.Effect.Algebraic.Hefty using (_>>=_ ; _>>_)
-
-
+-}
+{-
 tokenizeTextᴴ : {H H1 H2 H3 H4 : Effectᴴ}
     → ⦃ heftyrow H ＝ (Lift TokenizerResult) ∣ H1 ⦄
     → ⦃ heftyrow H ＝ (Lift Logger) ∣ H2 ⦄
@@ -184,4 +280,6 @@ tokenizerWithLogᴴ str = (un (givenHandle hResult
 {-
 testBig : tokenizerWithLogᴴ "wordd2 5" ≡ ( [] , "", nothing)
 testBig = refl
+-}
+
 -}
