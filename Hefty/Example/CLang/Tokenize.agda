@@ -120,9 +120,6 @@ wordTokenToStr : WordToken → String
 wordTokenToStr (symbol ch) = show ch
 wordTokenToStr (suffix suf ch) = wordTokenToStr suf ++ show ch
 
-
-
-
 charToWord : Char → Maybe WordToken
 charToWord ch = if isIdent2 ch then just $ symbol ch else nothing
 
@@ -235,6 +232,17 @@ open Parser
 nextstep : Parser → AToken → Parser
 nextstep parser newAtok = mkParser (suc $ pos parser) newAtok
 
+recognize : Parser -> Char → Maybe (Parser × String)
+recognize parser ch =
+    case charToDigit ch of λ where
+        (just d) → just $ (nextstep parser (mkANumber d) , "Number")
+        nothing  → case charToWord ch of λ where
+            (just symb) → just $ (nextstep parser (mkAWord symb) ,  "Word")
+            nothing  → case buildSpace space ch of λ where
+                (just sp) → just $ ( nextstep parser (mkASpace sp) , "Space")
+                nothing → nothing
+
+
 
 tokenize : {Effs : Effect}
     → ⦃ TokenizerResult ∈ Effs ⦄
@@ -249,32 +257,24 @@ tokenize [] parser = do
         (just tokenKind) → do
           send $ log ("add last token")
           send $ addToken (mkToken tokenKind 0 (pos parser))
-tokenize (ch ∷ text) parser =
-    case build (atok parser) (token (atok parser)) ch of λ where
+tokenize (ch ∷ text) parser = do
+    let cur-token = atok parser
+    let tok       = token cur-token
+    let new-token = build cur-token tok ch
+    case new-token of λ where
         nothing  → do
             send $ log ("build is fail, let's add to list")
-            case finish (atok parser) (token (atok parser)) of λ where
+            let finished-token = finish cur-token tok
+            case finished-token of λ where
                 (just tokenKind) → do
                     send $ addToken (mkToken tokenKind 0 (pos parser))
-                    case charToDigit ch of λ where
-                        (just d) → tokenize text (nextstep parser (mkANumber d))
-                        nothing  → case charToWord ch of λ where
-                            (just symb) → do
-                                send $ log ("mkAWord" ++ show ch)
-                                tokenize text (nextstep parser (mkAWord symb))
-                            nothing  → case buildSpace space ch of λ where
-                                (just sp) → tokenize text (nextstep parser (mkASpace sp))
-                                nothing → throwError (pos parser) ("invalid token: " ++ show ch)
+                    case recognize parser ch of λ where
+                        (just (new-parser , name)) → tokenize text new-parser
+                        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
                 nothing          → do
-                    case charToDigit ch of λ where
-                        (just d) → tokenize text (nextstep parser (mkANumber d))
-                        nothing  → case charToWord ch of λ where
-                            (just symb) → do
-                                send $ log ("mkAWord" ++ show ch)
-                                tokenize text (nextstep parser (mkAWord symb))
-                            nothing  → case buildSpace space ch of λ where
-                                (just sp) → tokenize text (nextstep parser (mkASpace sp))
-                                nothing → throwError (pos parser) ("invalid token: " ++ show ch)
+                    case recognize parser ch of λ where
+                        (just (new-parser , name)) → tokenize text new-parser
+                        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
         (just newATok) → do
             send $ log ("continue build '" ++ show ch ++ "'")
             tokenize text (record
@@ -350,70 +350,3 @@ testBig : tokenizer "word 123 word2 5" ≡
                                     ∷ []
 testBig = refl
 
-
-testBigLog2 : tokenizerWithLog "word 123 w w 3 w4" ≡ ( mkToken
-                                                        (Ident
-                                                         (wordTokenToStr
-                                                          (suffix (suffix (suffix (token (mkAWord (symbol 'w'))) 'o') 'r')
-                                                           'd')))
-                                                        0 4
-                                                        ∷
-                                                        mkToken
-                                                        (Num
-                                                         (finishNum (addDigit (addDigit (token (mkANumber d1)) d2) d3)))
-                                                        0 8
-                                                        ∷
-                                                        mkToken (Ident (wordTokenToStr (token (mkAWord (symbol 'w'))))) 0
-                                                        10
-                                                        ∷
-                                                        mkToken (Ident (wordTokenToStr (token (mkAWord (symbol 'w'))))) 0
-                                                        12
-                                                        ∷
-                                                        mkToken (Num (finishNum (token (mkANumber d3)))) 0 14 ∷
-                                                        mkToken
-                                                        (Ident
-                                                         (wordTokenToStr (suffix (token (mkAWord (symbol 'w'))) '4')))
-                                                        0 17
-                                                        ∷ [] , "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                ("mkAWord" ++ show 'w') ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show 'o' ++ "'") ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show 'r' ++ "'") ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show 'd' ++ "'") ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show '2' ++ "'") ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show '3' ++ "'") ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                ("mkAWord" ++ show 'w') ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                ("mkAWord" ++ show 'w') ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                "build is fail, let's add to list" ++
-                                                                "\n" ++
-                                                                ("mkAWord" ++ show 'w') ++
-                                                                "\n" ++
-                                                                ("continue build '" ++ show '4' ++ "'") ++
-                                                                "\n" ++ "add last token" ++ "\n" ++ "" , (just tt))
-testBigLog2 = refl
