@@ -18,6 +18,7 @@ open import Data.String.Base
 open import Foundation.Base
 
 open import Control.Effect.Algebraic.Effect
+open import Control.Effect.Algebraic.Hefty using (Effectᴴ ; Opᴴ)
 open import Control.Effect.Algebraic.Effect.Free
   hiding ( _>>_)
   renaming
@@ -144,12 +145,6 @@ Empty A = record
     (emptyOp _) -> A
   }
 
-{-
-instance
-  foo  : {o r ℓ : Level}
-    {E : Effect {o} {r} } → MonadPlus {ℓ} {o ⊔ r ⊔ ℓ} (Free {o} {r} {ℓ} E)
-  foo = {!!}
-
 data ChooseOp ( A : Set) : Set1
   where
   choose : A → ChooseOp A
@@ -161,4 +156,19 @@ Choose A = record
   ; Ret = λ where
     (choose _) -> A
   }
+
+
+data ChooseHOp (F : Set → Set) (A : Set) : Set where
+    chooseH : F A → F A → ChooseHOp F A
+
+
+ChooseH  : (F : Set → Set) → (A : Set) → Effectᴴ
+ChooseH F A .Opᴴ = ChooseHOp F A
+ChooseH F A .Effectᴴ.Fork = {!!}
+ChooseH F A .Effectᴴ.Retᴴ = {!!}
+{-
+instance
+  foo  : {o r ℓ : Level}
+    {E : Effect {o} {r} } → MonadPlus {ℓ} {o ⊔ r ⊔ ℓ} (Free {o} {r} {ℓ} E)
+  foo = {!!}
 -}

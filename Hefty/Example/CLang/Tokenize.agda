@@ -1,4 +1,3 @@
-{-# OPTIONS  --backtracking-instance-search  #-}
 module Example.CLang.Tokenize
     where
 
@@ -18,128 +17,232 @@ open import Data.Vec.Base
 
 open import Control.Effect.Algebraic.FirstOrder.Nil
 open import Control.Effect.Algebraic.FirstOrder.State
+open import Control.Effect.Algebraic.FirstOrder.Throw
 open import Control.Effect.Algebraic.Effect
+open import Control.Effect.Algebraic.Effect.Free
 open import Control.Effect.Algebraic.Effect.OpenUnion
 open import Control.Effect.Algebraic.Effect.OpenUnion.Properties
-open import Control.Effect.Algebraic.Effect.Free
-open import Example.CLang.TokenTypes
 
-
-EffectOp = Set1
-MyEffect = Effect {lsuc lzero} {lsuc lzero}
-
-data One : EffectOp
-    where
-    one : One
-data Zero : EffectOp where
-
-
-zero-elim : ∀ {w} {Whatever : Set w} → Zero → Whatever
-zero-elim ()
 
 private
   variable
     a b c d e : Level
     A : Set a
     B : Set b
-    Effs : MyEffect
+    C : Set c
+    D : Set d
+    E : Set e
 
-data ThrowErrorOp (S : Set) : Set1 where
-    throwE : S -> ThrowErrorOp S
+data TokenKind : Set
+    where
+    EOF     : TokenKind
+    Ident   : String -> TokenKind
+    Punct   : String -> TokenKind
+    Num     : Nat    -> TokenKind
+    Keyword : String -> TokenKind
+open TokenKind public
 
-ThrowError : (S : Set) -> MyEffect
-ThrowError S = record
-    { Op = ThrowErrorOp S
+record Token : Set
+    where
+    constructor mkToken
+    field tokenKind : TokenKind
+          tokenLen  : Nat
+          tokenLoc  : Nat
+open Token public
+
+data TokenizerOp : Set1
+    where
+    addToken : Token → TokenizerOp
+
+TokenizerResult : FirstEffect
+TokenizerResult = record
+    { Op = TokenizerOp
     ; Ret = λ where
-        (throwE _) → Zero
+        (addToken _)  → ⊤
     }
 
-
-data LoggerOp : EffectOp
+data LoggerOp : Set1
     where
     log : String → LoggerOp
 
 
-
-Logger : MyEffect
+Logger : FirstEffect
 Logger = record
     { Op = LoggerOp
     ; Ret = λ where
-        (log _)  → One
+        (log _)  → ⊤
     }
-
-data TokenizerOp : EffectOp
-    where
-    addToken : Token → TokenizerOp
-
-TokenizerResult : MyEffect
-TokenizerResult = record
-    { Op = TokenizerOp
-    ; Ret = λ where
-        (addToken _)  → One
-    }
-
-
-
-foo : Char → Maybe AToken
-foo ch = case charToDigit ch of λ where
-        (just d) → just (mkANumber d)
-        nothing → nothing
-
-record Recognize : Set1
-    where
-    constructor mkRec
-    field name : String
-          recognize :  Char → Maybe AToken
-open Recognize public
 
 
 TokenThrow = ThrowError (Nat × String)
 
 
+show : Char -> String
+show ch = fromList (ch ∷ [])
 
-data ChooseOp (A : Set1) : EffectOp
-  where
-  choose : List A → ChooseOp A
-
-
-Choose : (A : Set1) → MyEffect
-Choose A = record
-  { Op = ChooseOp A
-  ; Ret = λ where
-    (choose _) -> A
-  }
-
-arr : List Recognize
-arr =  mkRec "Numbers" foo ∷ []
-
-throwError
-    : ⦃  TokenThrow ∈ Effs ⦄
+throwError : {Effs : Effect} { A : Set  }
+    → ⦃ TokenThrow ∈ Effs ⦄
     → Nat
     → String
     → Free Effs A
 throwError pos text  = do
     x <- send (throwE (pos , text))
-    zero-elim x
+    ⊥-elim x
 
-tokenize
-    : ⦃ TokenizerResult ∈ Effs ⦄
+isIdent1 : Char → Bool
+isIdent1 c = primIsAlpha c ∨ primCharEquality c '_'
+
+isIdent2 : Char → Bool
+isIdent2 c = isIdent1 c ∨ primIsDigit c
+
+isSeparator : Char → Bool
+isSeparator c = primIsSpace c
+
+unconsList : {A : Set} -> List A -> Maybe ( A × List A )
+unconsList [] = nothing
+unconsList (x ∷ st) = just (x , st )
+
+
+Stream = (List Char × Nat)
+
+data WordToken : Set
+  where
+    symbol : Char -> WordToken
+    suffix : WordToken -> Char -> WordToken
+
+word_ : WordToken
+word_ = suffix (suffix (suffix (suffix (symbol 'h') 'e') 'l') 'l') 'o'
+
+buildWord : WordToken → Char → Maybe WordToken
+buildWord x ch = if isIdent2 ch then just $ suffix x ch else nothing
+
+wordTokenToStr : WordToken → String
+wordTokenToStr (symbol ch) = show ch
+wordTokenToStr (suffix suf ch) = wordTokenToStr suf ++ show ch
+
+
+
+
+charToWord : Char → Maybe WordToken
+charToWord ch = if isIdent2 ch then just $ symbol ch else nothing
+
+
+data Digit : Set
+    where
+        d0 : Digit
+        d1 : Digit
+        d2 : Digit
+        d3 : Digit
+        d4 : Digit
+        d5 : Digit
+        d6 : Digit
+        d7 : Digit
+        d8 : Digit
+        d9 : Digit
+
+charToDigit : Char → Maybe Digit
+charToDigit '0' = just d0
+charToDigit '1' = just d1
+charToDigit '2' = just d2
+charToDigit '3' = just d3
+charToDigit '4' = just d4
+charToDigit '5' = just d5
+charToDigit '6' = just d6
+charToDigit '7' = just d7
+charToDigit '8' = just d8
+charToDigit '9' = just d9
+charToDigit ch = nothing
+
+digitToNat : Digit → Nat
+digitToNat d0 = 0
+digitToNat d1 = 1
+digitToNat d2 = 2
+digitToNat d3 = 3
+digitToNat d4 = 4
+digitToNat d5 = 5
+digitToNat d6 = 6
+digitToNat d7 = 7
+digitToNat d8 = 8
+digitToNat d9 = 9
+
+data NumToken : Set
+    where
+      digit : Digit -> NumToken     -- pure
+      addDigit : NumToken → Digit → NumToken -- impure
+
+buildNum : NumToken → Char → Maybe NumToken
+buildNum x ch = case charToDigit ch of λ where
+                    (just d) -> just $ addDigit x d
+                    nothing -> nothing
+
+finishNum : NumToken → Nat
+finishNum (digit d) = digitToNat d
+finishNum (addDigit num d) = digitToNat d + (10 * finishNum num) -- Maybe there is an error, but who care, it is an example
+
+data Space : Set
+    where
+    space : Space
+
+
+buildSpace : Space → Char → Maybe Space
+buildSpace sp ch = if isSeparator ch
+                   ∨ primCharEquality ch '\n'
+                   ∨ primCharEquality ch '\0'
+                      then just sp
+                      else nothing
+
+record AToken : Set1
+    where
+    field tokenT : Set
+          token  : tokenT
+          build  : tokenT → Char → Maybe tokenT
+          finish : tokenT → Maybe TokenKind
+open AToken public
+
+mkAWord : WordToken → AToken
+mkAWord ch = record
+    { tokenT = WordToken
+    ; token = ch
+    ; build = buildWord
+    ; finish = λ x → just  (Ident (wordTokenToStr x))
+    }
+
+
+mkANumber : Digit → AToken
+mkANumber d = record
+    { tokenT = NumToken
+    ; token = digit d
+    ; build = buildNum
+    ; finish = λ x → just (Num (finishNum x))
+    }
+
+mkASpace : Space → AToken
+mkASpace _ = record
+    { tokenT = Space
+    ; token = space
+    ; build = buildSpace
+    ; finish = λ z → nothing
+    }
+
+
+record Parser : Set2
+    where
+    constructor mkParser
+    field pos  : Nat
+          atok : AToken
+open Parser
+
+nextstep : Parser → AToken → Parser
+nextstep parser newAtok = mkParser (suc $ pos parser) newAtok
+
+
+tokenize : {Effs : Effect}
+    → ⦃ TokenizerResult ∈ Effs ⦄
     → ⦃ Logger ∈ Effs ⦄
     → ⦃ TokenThrow ∈ Effs ⦄
-    → ⦃ (Choose Recognize) ∈ Effs ⦄
     → List Char
     → Parser
     → Free Effs ⊤
-tokenize [] parser = {!!}
-tokenize (ch ∷ text) parser = do
-    prs <- send $ choose arr
-    send $ log ("Try with " ++ name prs)
-    case (recognize prs) ch of λ where
-        (just d) → {!!} -- tokenize1 text (nextstep parser (mkANumber d))
-        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
-    {!!}
-
-{-
 tokenize [] parser = do
     case finish (atok parser) (token (atok parser)) of λ where
         nothing          → pure tt
@@ -153,133 +256,164 @@ tokenize (ch ∷ text) parser =
             case finish (atok parser) (token (atok parser)) of λ where
                 (just tokenKind) → do
                     send $ addToken (mkToken tokenKind 0 (pos parser))
-                    x <- send $ choose {{{!!}}} {!arr!}
-
-                    {!!}
--}
-{-
-                    newThread1 <- up branch
-                    if newThread1
-                        then (do
-                                up $ log ("Parse " ++ show ch ++ " with NumParser")
-                                case charToDigit ch of λ where
-                                    (just d) → tokenize1 text (nextstep parser (mkANumber d))
-                                    nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
-                        ) else do
-                            newThread2 <- up branch
-                            if newThread2
-                                then (do
-                                        up $ log ("Parse " ++ show ch ++ " with WordParser")
-                                        case charToWord ch of λ where
-                                            (just symb) → do
-                                                up $ log ("mkAWord" ++ show ch)
-                                                tokenize1 text (nextstep parser (mkAWord symb))
-                                            nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
-                                ) else do
-                                        up $ log ("Parse " ++ show ch ++ " with SpaceParser")
-                                        case buildSpace space ch of λ where
-                                            (just sp) → tokenize1 text (nextstep parser (mkASpace sp))
-                                            nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
+                    case charToDigit ch of λ where
+                        (just d) → tokenize text (nextstep parser (mkANumber d))
+                        nothing  → case charToWord ch of λ where
+                            (just symb) → do
+                                send $ log ("mkAWord" ++ show ch)
+                                tokenize text (nextstep parser (mkAWord symb))
+                            nothing  → case buildSpace space ch of λ where
+                                (just sp) → tokenize text (nextstep parser (mkASpace sp))
+                                nothing → throwError (pos parser) ("invalid token: " ++ show ch)
                 nothing          → do
-                    newThread1 <- up branch
-                    if newThread1
-                        then (do
-                                up $ log ("Parse " ++ show ch ++ " with NumParser")
-                                case charToDigit ch of λ where
-                                    (just d) → tokenize1 text (nextstep parser (mkANumber d))
-                                    nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
-                        ) else do
-                            newThread2 <- up branch
-                            if newThread2
-                                then (do
-                                        up $ log ("Parse " ++ show ch ++ " with WordParser")
-                                        case charToWord ch of λ where
-                                            (just symb) → do
-                                                up $ log ("mkAWord" ++ show ch)
-                                                tokenize1 text (nextstep parser (mkAWord symb))
-                                            nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
-                                ) else do
-                                        up $ log ("Parse " ++ show ch ++ " with SpaceParser")
-                                        case buildSpace space ch of λ where
-                                            (just sp) → tokenize1 text (nextstep parser (mkASpace sp))
-                                            nothing → throwErrorᴴ (pos parser) ("invalid token: " ++ show ch)
+                    case charToDigit ch of λ where
+                        (just d) → tokenize text (nextstep parser (mkANumber d))
+                        nothing  → case charToWord ch of λ where
+                            (just symb) → do
+                                send $ log ("mkAWord" ++ show ch)
+                                tokenize text (nextstep parser (mkAWord symb))
+                            nothing  → case buildSpace space ch of λ where
+                                (just sp) → tokenize text (nextstep parser (mkASpace sp))
+                                nothing → throwError (pos parser) ("invalid token: " ++ show ch)
         (just newATok) → do
-            up $ log ("continue build '" ++ show ch ++ "'")
-            tokenize1 text (record
+            send $ log ("continue build '" ++ show ch ++ "'")
+            tokenize text (record
                 {pos = suc $ pos parser
                 ; atok = record
                 { tokenT = tokenT $ atok parser
                 ; token  = newATok
                 ; build  = build $ atok parser
                 ; finish = finish $ atok parser } })
--}
-{-
-tokenizeTextᴴ : {H H1 H2 H3 H4 : Effectᴴ}
-    → ⦃ heftyrow H ＝ (Lift TokenizerResult) ∣ H1 ⦄
-    → ⦃ heftyrow H ＝ (Lift Logger) ∣ H2 ⦄
-    → ⦃ heftyrow H ＝ (Lift TokenThrow) ∣ H3 ⦄
-    → ⦃ heftyrow H ＝ Branch ∣ H4 ⦄
-   → String
-    → Hefty H ⊤
-tokenizeTextᴴ text = tokenize1 (toList text ) (mkParser 0 (mkASpace space))
 
-eBranch2 : {Effs E1 : Effect}
-    → ⦃ effrow Effs ＝ Logger ∣ E1 ⦄
-    → Elaboration Branch Effs
-eBranch2 .alg branch fork k = do
-
-    send (log ("bla bla bla"))
-    (l1 , x )  <- (# givenHandle hLogger (k true) tt)
-    --(l2 , y )  <- (# givenHandle hLogger (k false) tt)
-    send (log l1)
-   -- eee2 <- k false
-    k true
-    where open import Control.Effect.Algebraic.Effect.Free using (_>>=_ ; _>>_)
+tokenizeText : {Effs : Effect}
+    → ⦃ TokenizerResult ∈ Effs ⦄
+    → ⦃ Logger ∈ Effs ⦄
+    → ⦃ TokenThrow ∈ Effs ⦄
+    → String
+    → Free Effs ⊤
+tokenizeText text = tokenize (toList text ) (mkParser 0 (mkASpace space))
 
 
+hResult : {Effs : Effect} -> Handler A TokenizerResult ⊤ (List Token × A ) Effs
+hResult .ret x _ = pure ([] , x)
+hResult .hdl (addToken tok) k p = do
+    (s' , x) <- k tt p
+    pure ((tok ∷ s') , x)
 
-eNil : {Eff : Effect} -> Elaboration (Lift Nil) Eff
-alg eNil ()
-eTokenizeElab : Elaboration
-                    ( Branch
-                    ⊕ᴴ Lift TokenizerResult
-                    ⊕ᴴ Lift Logger
-                    ⊕ᴴ Lift TokenThrow
-                    ⊕ᴴ Lift Nil
-                    )
-                    (
-                    TokenThrow
-                    ⊕ Logger
-                    ⊕ TokenizerResult
-                    ⊕ Nil
-                    )
-
-eTokenizeElab = eBranch2
-           ⊕ᴬ eLift
-           ⊕ᴬ eLift
-           ⊕ᴬ eLift
-           ⊕ᴬ eNil
+hLogger : {Effs : Effect} -> Handler A Logger ⊤ (String × A ) Effs
+hLogger .ret x _ = pure ("" ,  x)
+hLogger .hdl (log str) k p = do
+    (s' , x) <- k tt p
+    pure ((str ++ "\n" ++ s') , x)
 
 
-tokenizerᴴ : String -> ( List Token )
-tokenizerᴴ str = fst  (un (givenHandle hResult
+hThrow : {Effs : Effect} -> Handler A TokenThrow ⊤ (Maybe A) Effs
+hThrow .ret x _ = pure (just x)
+hThrow .hdl (throwE code) k x = pure nothing
+
+
+tokenizer : String -> ( List Token )
+tokenizer str = fst  (un (givenHandle hResult
            (givenHandle hLogger
-           (givenHandle hThrow (elaborate eTokenizeElab (tokenizeTextᴴ str) ) tt) tt) tt))
-    where
-        open import Control.Effect.Algebraic.Effect.Free using (_>>=_ ; _>>_)
-        open import Control.Effect.Algebraic.Effect.RowInsert using (send ; Handler ; givenHandle)
+           (givenHandle hThrow (tokenizeText str) tt) tt) tt))
 
-tokenizerWithLogᴴ : String -> ( List Token × String × Maybe ⊤)
-tokenizerWithLogᴴ str = (un (givenHandle hResult
+
+tokenizerWithLog : String -> ( List Token × String × Maybe ⊤ )
+tokenizerWithLog str = un (givenHandle hResult
            (givenHandle hLogger
-           (givenHandle hThrow (elaborate eTokenizeElab (tokenizeTextᴴ str) ) tt) tt) tt))
-    where
-        open import Control.Effect.Algebraic.Effect.Free using (_>>=_ ; _>>_)
-        open import Control.Effect.Algebraic.Effect.RowInsert using (send ; Handler ; givenHandle)
+           (givenHandle hThrow (tokenizeText str) tt) tt) tt)
 
-{-
-testBig : tokenizerWithLogᴴ "wordd2 5" ≡ ( [] , "", nothing)
+test1 : tokenizer "word" ≡ mkToken (Ident "word") 0 4 ∷ []
+test1 = refl
+
+testword2 : tokenizer "word word2" ≡ mkToken (Ident "word") 0 4
+                                    ∷ mkToken (Ident "word2") 0 10
+                                    ∷ []
+testword2 = refl
+
+
+test2 : tokenizer "     " ≡ []
+test2 = refl
+
+test3 : tokenizer "1234" ≡ mkToken (Num 1234) 0 4 ∷ []
+test3 = refl
+
+test4 : tokenizer "0004" ≡ mkToken (Num 4) 0 4 ∷ []
+test4 = refl
+
+
+testBig : tokenizer "word 123 word2 5" ≡
+                                    mkToken (Ident "word") 0 4
+                                    ∷ mkToken (Num 123) 0 8
+                                    ∷ mkToken (Ident "word2") 0 14
+                                    ∷ mkToken (Num 5) 0 16
+                                    ∷ []
 testBig = refl
--}
 
--}
+
+testBigLog2 : tokenizerWithLog "word 123 w w 3 w4" ≡ ( mkToken
+                                                        (Ident
+                                                         (wordTokenToStr
+                                                          (suffix (suffix (suffix (token (mkAWord (symbol 'w'))) 'o') 'r')
+                                                           'd')))
+                                                        0 4
+                                                        ∷
+                                                        mkToken
+                                                        (Num
+                                                         (finishNum (addDigit (addDigit (token (mkANumber d1)) d2) d3)))
+                                                        0 8
+                                                        ∷
+                                                        mkToken (Ident (wordTokenToStr (token (mkAWord (symbol 'w'))))) 0
+                                                        10
+                                                        ∷
+                                                        mkToken (Ident (wordTokenToStr (token (mkAWord (symbol 'w'))))) 0
+                                                        12
+                                                        ∷
+                                                        mkToken (Num (finishNum (token (mkANumber d3)))) 0 14 ∷
+                                                        mkToken
+                                                        (Ident
+                                                         (wordTokenToStr (suffix (token (mkAWord (symbol 'w'))) '4')))
+                                                        0 17
+                                                        ∷ [] , "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                ("mkAWord" ++ show 'w') ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show 'o' ++ "'") ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show 'r' ++ "'") ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show 'd' ++ "'") ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show '2' ++ "'") ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show '3' ++ "'") ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                ("mkAWord" ++ show 'w') ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                ("mkAWord" ++ show 'w') ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                "build is fail, let's add to list" ++
+                                                                "\n" ++
+                                                                ("mkAWord" ++ show 'w') ++
+                                                                "\n" ++
+                                                                ("continue build '" ++ show '4' ++ "'") ++
+                                                                "\n" ++ "add last token" ++ "\n" ++ "" , (just tt))
+testBigLog2 = refl

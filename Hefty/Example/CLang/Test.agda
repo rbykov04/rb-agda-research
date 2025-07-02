@@ -35,35 +35,35 @@ private
     E : Set e
 
 
-test1 : tokenizer "word" ≡ mkToken (Ident "word") 0 4 ∷ []
-test1 = refl
+test-1 : tokenizer "word" ≡ mkToken (Ident "word") 0 4 ∷ []
+test-1 = refl
 
-testword2 : tokenizer "word word2" ≡ mkToken (Ident "word") 0 4
+testword-2 : tokenizer "word word2" ≡ mkToken (Ident "word") 0 4
                                     ∷ mkToken (Ident "word2") 0 10
                                     ∷ []
-testword2 = refl
+testword-2 = refl
 
 
-test2 : tokenizer "     " ≡ []
-test2 = refl
+test-2 : tokenizer "     " ≡ []
+test-2 = refl
 
-test3 : tokenizer "1234" ≡ mkToken (Num 1234) 0 4 ∷ []
-test3 = refl
+test-3 : tokenizer "1234" ≡ mkToken (Num 1234) 0 4 ∷ []
+test-3 = refl
 
-test4 : tokenizer "0004" ≡ mkToken (Num 4) 0 4 ∷ []
-test4 = refl
+test-4 : tokenizer "0004" ≡ mkToken (Num 4) 0 4 ∷ []
+test-4 = refl
 
 
-testBig : tokenizer "word 123 word2 5" ≡
+testBig- : tokenizer "word 123 word2 5" ≡
                                     mkToken (Ident "word") 0 4
                                     ∷ mkToken (Num 123) 0 8
                                     ∷ mkToken (Ident "word2") 0 14
                                     ∷ mkToken (Num 5) 0 16
                                     ∷ []
-testBig = refl
+testBig- = refl
 
 
-testBigLog2 : tokenizerWithLog "word 123 w w 3 w4" ≡ ( mkToken
+testBigLog-2 : tokenizerWithLog "word 123 w w 3 w4" ≡ ( mkToken
                                                         (Ident
                                                          (wordTokenToStr
                                                           (suffix (suffix (suffix (token (mkAWord (symbol 'w'))) 'o') 'r')
@@ -128,4 +128,4 @@ testBigLog2 : tokenizerWithLog "word 123 w w 3 w4" ≡ ( mkToken
                                                                 "\n" ++
                                                                 ("continue build '" ++ show '4' ++ "'") ++
                                                                 "\n" ++ "add last token" ++ "\n" ++ "" , (just tt))
-testBigLog2 = refl
+testBigLog-2 = refl
