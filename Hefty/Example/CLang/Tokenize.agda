@@ -232,17 +232,34 @@ open Parser
 nextstep : Parser → AToken → Parser
 nextstep parser newAtok = mkParser (suc $ pos parser) newAtok
 
-recognize : Parser -> Char → Maybe (Parser × String)
-recognize parser ch =
-    case charToDigit ch of λ where
-        (just d) → just $ (nextstep parser (mkANumber d) , "Number")
-        nothing  → case charToWord ch of λ where
-            (just symb) → just $ (nextstep parser (mkAWord symb) ,  "Word")
-            nothing  → case buildSpace space ch of λ where
-                (just sp) → just $ ( nextstep parser (mkASpace sp) , "Space")
-                nothing → nothing
+startNumber : Char → Maybe AToken
+startNumber ch = case charToDigit ch of λ where
+    (just d) → just $ mkANumber d
+    nothing  → nothing
 
+startWord : Char → Maybe AToken
+startWord ch = case charToWord ch of λ where
+    (just symb) → just $ mkAWord symb
+    nothing  → nothing
 
+startSpace : Char → Maybe AToken
+startSpace ch = case buildSpace space ch of λ where
+    (just sp) → just $ mkASpace sp
+    nothing → nothing
+
+recognizeWithList : List (Char → Maybe AToken) → Parser → Char → Maybe Parser
+recognizeWithList (candidate ∷ xs) parser ch = case candidate ch of λ where
+    (just tok) → just (nextstep parser tok)
+    nothing → recognizeWithList xs parser ch
+
+recognizeWithList [] parser ch = nothing
+
+recognize : Parser -> Char → Maybe Parser
+recognize = recognizeWithList
+    (  startNumber
+    ∷ startWord
+    ∷ startSpace
+    ∷ [])
 
 tokenize : {Effs : Effect}
     → ⦃ TokenizerResult ∈ Effs ⦄
@@ -269,21 +286,24 @@ tokenize (ch ∷ text) parser = do
                 (just tokenKind) → do
                     send $ addToken (mkToken tokenKind 0 (pos parser))
                     case recognize parser ch of λ where
-                        (just (new-parser , name)) → tokenize text new-parser
+                        (just new-parser) → tokenize text new-parser
                         nothing → throwError (pos parser) ("invalid token: " ++ show ch)
                 nothing          → do
                     case recognize parser ch of λ where
-                        (just (new-parser , name)) → tokenize text new-parser
+                        (just new-parser) → tokenize text new-parser
                         nothing → throwError (pos parser) ("invalid token: " ++ show ch)
-        (just newATok) → do
+        (just newTok) → do
             send $ log ("continue build '" ++ show ch ++ "'")
             tokenize text (record
-                {pos = suc $ pos parser
+                { pos = suc $ pos parser
                 ; atok = record
-                { tokenT = tokenT $ atok parser
-                ; token  = newATok
-                ; build  = build $ atok parser
-                ; finish = finish $ atok parser } })
+                    { tokenT = tokenT $ atok parser
+                    ; token  = newTok
+                    ; build  = build $ atok parser
+                    ; finish = finish $ atok parser
+                    }
+                })
+
 
 tokenizeText : {Effs : Effect}
     → ⦃ TokenizerResult ∈ Effs ⦄
