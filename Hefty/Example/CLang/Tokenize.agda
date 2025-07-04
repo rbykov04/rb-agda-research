@@ -261,6 +261,16 @@ recognize = recognizeWithList
     ∷ startSpace
     ∷ [])
 
+do-only-if : { A : Set} {Effs : Effect}
+    → ⦃ TokenizerResult ∈ Effs ⦄
+    → ⦃ Logger ∈ Effs ⦄
+    → ⦃ TokenThrow ∈ Effs ⦄
+    → Maybe A
+    → (A → Free Effs ⊤)
+    → Free Effs ⊤
+do-only-if (just t) func = func t
+do-only-if nothing func = pure tt
+
 tokenize : {Effs : Effect}
     → ⦃ TokenizerResult ∈ Effs ⦄
     → ⦃ Logger ∈ Effs ⦄
@@ -268,10 +278,7 @@ tokenize : {Effs : Effect}
     → List Char
     → Parser
     → Free Effs ⊤
-tokenize [] parser = do
-    case finish (atok parser) (token (atok parser)) of λ where
-        nothing          → pure tt
-        (just tokenKind) → do
+tokenize [] parser = do-only-if (finish (atok parser) (token (atok parser))) λ tokenKind → do
           send $ log ("add last token")
           send $ addToken (mkToken tokenKind 0 (pos parser))
 tokenize (ch ∷ text) parser = do
@@ -282,16 +289,10 @@ tokenize (ch ∷ text) parser = do
         nothing  → do
             send $ log ("build is fail, let's add to list")
             let finished-token = finish cur-token tok
-            case finished-token of λ where
-                (just tokenKind) → do
-                    send $ addToken (mkToken tokenKind 0 (pos parser))
-                    case recognize parser ch of λ where
-                        (just new-parser) → tokenize text new-parser
-                        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
-                nothing          → do
-                    case recognize parser ch of λ where
-                        (just new-parser) → tokenize text new-parser
-                        nothing → throwError (pos parser) ("invalid token: " ++ show ch)
+            do-only-if finished-token λ tokenKind →  send $ addToken (mkToken tokenKind 0 (pos parser))
+            case recognize parser ch of λ where
+                (just new-parser) → tokenize text new-parser
+                nothing → throwError (pos parser) ("invalid token: " ++ show ch)
         (just newTok) → do
             send $ log ("continue build '" ++ show ch ++ "'")
             tokenize text (record
